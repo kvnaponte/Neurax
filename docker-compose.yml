@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+# Servicio de la base de datos
+  db:
+    image: postgres:17
+    container_name: postgres_imbatible
+    restart: always
+    environment:
+      POSTGRES_USER: kevin_admin
+      POSTGRES_PASSWORD: admin12345
+      POSTGRES_DB: sistema_imbatible_db # Corregido: guion bajo y coincide con el backend
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+# Servicio del Backend (FastAPI)
+  backend:
+    build: .
+    container_name: fastapi_imbatible
+    restart: always # Es buena práctica agregarlo también aquí
+    ports:
+      - "1104:1104"
+    environment:
+      # Corregido: contraseña coincide con 'db' y nombre de BD corregido
+      DATABASE_URL: postgresql://kevin_admin:admin12345@db:5432/sistema_imbatible_db
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

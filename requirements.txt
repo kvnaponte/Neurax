@@ -1,1 +1,16 @@
-Docker
+# Servidor y Framework
+fastapi==0.110.0
+uvicorn==0.27.1
+
+# Base de Datos y ORM
+sqlalchemy==2.0.27
+psycopg2-binary==2.9.9
+sqlmodel==0.0.16
+
+# Validación de Datos y Entorno
+pydantic==2.6.1
+pydantic-settings==2.1.0
+python-dotenv==1.0.1
+
+# Utilidades (Opcional pero recomendado)
+python-multipart==0.0.9
