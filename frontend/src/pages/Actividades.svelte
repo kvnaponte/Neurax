@@ -5,13 +5,12 @@
 	import ActividadForm from '$lib/components/ActividadForm.svelte';
 
 	export let usuarioId: number;
-	let usuario = $state<any>(null);
-
-	let actividades = $state<any[]>([]);
-	let isLoading = $state(true);
-	let error = $state<string | null>(null);
-	let showForm = $state(false);
-	let dias = $state(7);
+	let usuario: any = null;
+	let actividades: any[] = [];
+	let isLoading: boolean = true;
+	let error: string | null = null;
+	let showForm: boolean = false;
+	let dias: number = 7;
 
 	function handleLogout() {
 		this.dispatchEvent(new CustomEvent('logout'));

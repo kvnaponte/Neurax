@@ -4,11 +4,11 @@
 
 	const dispatch = createEventDispatcher();
 
-	let nombre = $state('');
-	let email = $state('');
-	let isLoading = $state(false);
-	let error = $state<string | null>(null);
-	let isLogin = $state(true);
+	let nombre: string = '';
+	let email: string = '';
+	let isLoading: boolean = false;
+	let error: string | null = null;
+	let isLogin: boolean = true;
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();

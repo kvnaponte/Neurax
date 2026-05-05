@@ -4,14 +4,13 @@
 	import Navbar from '$lib/components/Navbar.svelte';
 
 	export let usuarioId: number;
-	let usuario = $state<any>(null);
-
-	let hitos = $state<any[]>([]);
-	let isLoading = $state(true);
-	let error = $state<string | null>(null);
-	let showForm = $state(false);
-	let formData = $state({ tipo: 'energia', valor_xp: 10, descripcion: '' });
-	let isSubmitting = $state(false);
+	let usuario: any = null;
+	let hitos: any[] = [];
+	let isLoading: boolean = true;
+	let error: string | null = null;
+	let showForm: boolean = false;
+	let formData: any = { tipo: 'energia', valor_xp: 10, descripcion: '' };
+	let isSubmitting: boolean = false;
 
 	function handleLogout() {
 		this.dispatchEvent(new CustomEvent('logout'));

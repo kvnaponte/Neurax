@@ -6,8 +6,8 @@
 	import Hitos from './pages/Hitos.svelte';
 	import Perfil from './pages/Perfil.svelte';
 
-	let currentPage = $state<string>('login');
-	let usuarioId = $state<number | null>(null);
+	let currentPage: string = 'login';
+	let usuarioId: number | null = null;
 
 	onMount(() => {
 		const stored = localStorage.getItem('usuarioId');

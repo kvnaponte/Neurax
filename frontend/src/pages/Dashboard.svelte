@@ -8,11 +8,11 @@
 
 	export let usuarioId: number;
 
-	let usuario = $state<any>(null);
-	let estadisticas = $state<any>(null);
-	let isLoading = $state(true);
-	let error = $state<string | null>(null);
-	let showActividadForm = $state(false);
+	let usuario: any = null;
+	let estadisticas: any = null;
+	let isLoading: boolean = true;
+	let error: string | null = null;
+	let showActividadForm: boolean = false;
 
 	function handleLogout() {
 		this.dispatchEvent(new CustomEvent('logout'));
