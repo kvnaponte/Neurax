@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import { usuariosAPI, estadisticasAPI } from '$lib/services/api';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import XPCard from '$lib/components/XPCard.svelte';
@@ -8,6 +9,8 @@
 
 	export let usuarioId: number;
 
+	const dispatch = createEventDispatcher();
+
 	let usuario: any = null;
 	let estadisticas: any = null;
 	let isLoading: boolean = true;
@@ -15,11 +18,11 @@
 	let showActividadForm: boolean = false;
 
 	function handleLogout() {
-		this.dispatchEvent(new CustomEvent('logout'));
+		dispatch('logout');
 	}
 
 	function navigate(page: string) {
-		this.dispatchEvent(new CustomEvent('navigate', { detail: page }));
+		dispatch('navigate', page);
 	}
 
 	async function loadData() {
