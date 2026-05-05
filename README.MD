@@ -235,13 +235,9 @@ sistema-imbatible/
 4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
 
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
-
 ## 👨‍💻 Autor
 
-- Tu Nombre - [@tuusuario](https://github.com/tuusuario)
+- Tu Nombre - [@kvnaponte](https://github.com/kvnaponte)
 
 ## 🙏 Agradecimientos
 
