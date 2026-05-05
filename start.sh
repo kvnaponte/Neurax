@@ -33,8 +33,19 @@ if command -v docker &> /dev/null; then
 
     # Verificar si docker-compose está disponible
     if command -v docker-compose &> /dev/null; then
-        docker-compose up -d
-        success "Docker Compose iniciado"
+        # Limpiar contenedores/volúmenes anteriores si existen
+        warn "Limpiando contenedores antiguos..."
+        docker-compose down -v 2>/dev/null || true
+
+        sleep 2
+
+        # Iniciar docker-compose
+        if docker-compose up -d; then
+            success "Docker Compose iniciado"
+        else
+            error "Fallo al iniciar Docker Compose"
+            exit 1
+        fi
         echo ""
         echo "Backend en: http://localhost:1104"
         echo "Base de datos en: localhost:5432"
