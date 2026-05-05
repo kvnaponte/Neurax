@@ -14,3 +14,7 @@ python-dotenv==1.0.1
 
 # Utilidades (Opcional pero recomendado)
 python-multipart==0.0.9
+
+# Autenticación y Seguridad
+python-jose[cryptography]==3.3.0
+passlib[argon2]==1.7.4

@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { usuariosAPI } from '$lib/services/api';
+	import { authAPI } from '$lib/services/api';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
 
 	let nombre: string = '';
 	let email: string = '';
+	let password: string = '';
 	let isLoading: boolean = false;
 	let error: string | null = null;
 	let isLogin: boolean = true;
@@ -16,15 +17,31 @@
 		error = null;
 
 		try {
-			const response = await usuariosAPI.crear(nombre, email);
-			const usuario = response.data;
+			let response;
+			if (isLogin) {
+				response = await authAPI.login(email, password);
+			} else {
+				response = await authAPI.register(nombre, email, password);
+			}
 
-			dispatch('login', { usuarioId: usuario.id });
+			const { access_token, usuario_id } = response.data;
+			localStorage.setItem('access_token', access_token);
+			localStorage.setItem('usuario_id', usuario_id.toString());
+
+			dispatch('login', { usuarioId: usuario_id });
 		} catch (err: any) {
 			error = err.response?.data?.detail || 'Error al procesar la solicitud';
 		} finally {
 			isLoading = false;
 		}
+	}
+
+	function toggleMode() {
+		isLogin = !isLogin;
+		error = null;
+		nombre = '';
+		email = '';
+		password = '';
 	}
 </script>
 
@@ -37,17 +54,19 @@
 		</div>
 
 		<form on:submit={handleSubmit} class="login-form">
-			<div class="form-group">
-				<label for="nombre">Nombre</label>
-				<input
-					id="nombre"
-					type="text"
-					placeholder="Tu nombre completo"
-					bind:value={nombre}
-					required
-					disabled={isLoading}
-				/>
-			</div>
+			{#if !isLogin}
+				<div class="form-group">
+					<label for="nombre">Nombre</label>
+					<input
+						id="nombre"
+						type="text"
+						placeholder="Tu nombre completo"
+						bind:value={nombre}
+						required={!isLogin}
+						disabled={isLoading}
+					/>
+				</div>
+			{/if}
 
 			<div class="form-group">
 				<label for="email">Email</label>
@@ -56,6 +75,18 @@
 					type="email"
 					placeholder="tu@email.com"
 					bind:value={email}
+					required
+					disabled={isLoading}
+				/>
+			</div>
+
+			<div class="form-group">
+				<label for="password">Contraseña</label>
+				<input
+					id="password"
+					type="password"
+					placeholder="Tu contraseña segura"
+					bind:value={password}
 					required
 					disabled={isLoading}
 				/>
@@ -70,10 +101,14 @@
 			<button type="submit" class="btn btn-primary btn-lg" disabled={isLoading}>
 				{#if isLoading}
 					<span class="spinner"></span>
-					Iniciando...
+					{isLogin ? 'Iniciando sesión...' : 'Registrando...'}
 				{:else}
-					Comenzar tu aventura
+					{isLogin ? 'Iniciar sesión' : 'Crear cuenta'}
 				{/if}
+			</button>
+
+			<button type="button" class="btn-toggle" on:click={toggleMode} disabled={isLoading}>
+				{isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
 			</button>
 		</form>
 
@@ -228,5 +263,28 @@
 		color: var(--color-text-secondary);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
+	}
+
+	.btn-toggle {
+		width: 100%;
+		padding: 0.75rem;
+		margin-top: 1rem;
+		background-color: transparent;
+		border: 1px solid var(--color-surface-hover);
+		color: var(--color-text-secondary);
+		border-radius: 0.5rem;
+		font-size: 0.875rem;
+		cursor: pointer;
+		transition: var(--transition);
+	}
+
+	.btn-toggle:hover:not(:disabled) {
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+	}
+
+	.btn-toggle:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 </style>

@@ -16,7 +16,7 @@ from app.config import (
     CORS_ALLOW_HEADERS,
 )
 from app.database import init_db
-from app.routes import users_router, activities_router, stats_router
+from app.routes import users_router, activities_router, stats_router, auth_router
 
 
 # Create FastAPI application
@@ -39,6 +39,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(activities_router)
 app.include_router(stats_router)

@@ -17,6 +17,7 @@ from app.schemas.activity import (
 )
 from app.config import calcular_xp_actividad, obtener_nivel_desde_xp
 from app.services.streak_manager import calcular_racha
+from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/usuarios/{usuario_id}", tags=["Actividades"])
 
@@ -42,6 +43,7 @@ def obtener_usuario_activo(usuario_id: int, db: Session) -> Usuario:
 def registrar_actividad(
     usuario_id: int,
     actividad: ActividadRequest,
+    current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Registra una nueva actividad para el usuario"""
@@ -84,6 +86,7 @@ def registrar_actividad(
 def obtener_actividades(
     usuario_id: int,
     dias: int = Query(default=7, le=365),
+    current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Obtiene el historial de actividades del usuario"""
@@ -107,6 +110,7 @@ def obtener_actividades(
 def registrar_hito(
     usuario_id: int,
     hito: HitoRequest,
+    current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Registra un hito especial para el usuario"""
@@ -142,7 +146,11 @@ def registrar_hito(
 
 
 @router.get("/hitos", response_model=List[HitoResponse])
-def obtener_hitos(usuario_id: int, db: Session = Depends(get_db)):
+def obtener_hitos(
+    usuario_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Obtiene todos los hitos del usuario"""
     obtener_usuario_activo(usuario_id, db)
 

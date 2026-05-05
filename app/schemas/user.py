@@ -15,7 +15,13 @@ class UsuarioBase(BaseModel):
 
 class UsuarioCreate(UsuarioBase):
     """Esquema para crear un usuario"""
-    pass
+    password: str
+
+
+class LoginRequest(BaseModel):
+    """Esquema para solicitud de login"""
+    email: str
+    password: str
 
 
 class UsuarioUpdate(BaseModel):
@@ -34,3 +40,10 @@ class UsuarioResponse(UsuarioBase):
 
     class Config:
         from_attributes = True
+
+
+class TokenResponse(BaseModel):
+    """Esquema para respuesta de login con token"""
+    access_token: str
+    token_type: str
+    usuario_id: int

@@ -9,23 +9,42 @@
 	let currentPage: string = 'login';
 	let usuarioId: number | null = null;
 
+	function decodeToken(token: string): any {
+		try {
+			const parts = token.split('.');
+			if (parts.length !== 3) return null;
+			const payload = parts[1];
+			const decoded = JSON.parse(atob(payload));
+			return decoded;
+		} catch {
+			return null;
+		}
+	}
+
 	onMount(() => {
-		const stored = localStorage.getItem('usuarioId');
-		if (stored) {
-			usuarioId = parseInt(stored);
-			currentPage = 'dashboard';
+		const token = localStorage.getItem('access_token');
+		const stored = localStorage.getItem('usuario_id');
+		if (token && stored) {
+			const decoded = decodeToken(token);
+			if (decoded && decoded.exp && decoded.exp * 1000 > Date.now()) {
+				usuarioId = parseInt(stored);
+				currentPage = 'dashboard';
+			} else {
+				localStorage.removeItem('access_token');
+				localStorage.removeItem('usuario_id');
+			}
 		}
 	});
 
 	function handleLogin(event: any) {
 		usuarioId = event.detail.usuarioId;
-		localStorage.setItem('usuarioId', usuarioId.toString());
 		currentPage = 'dashboard';
 	}
 
 	function handleLogout() {
 		usuarioId = null;
-		localStorage.removeItem('usuarioId');
+		localStorage.removeItem('access_token');
+		localStorage.removeItem('usuario_id');
 		currentPage = 'login';
 	}
 

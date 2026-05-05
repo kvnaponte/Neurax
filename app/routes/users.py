@@ -11,6 +11,7 @@ from app.models.user import Usuario
 from app.schemas.user import UsuarioCreate, UsuarioResponse
 from app.config import Nivel, obtener_nivel_desde_xp
 from app.services.streak_manager import calcular_racha
+from app.auth import hash_password
 
 router = APIRouter(prefix="/api/usuarios", tags=["Usuarios"])
 
@@ -39,6 +40,7 @@ def crear_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     nuevo = Usuario(
         nombre=usuario.nombre,
         email=usuario.email,
+        hashed_password=hash_password(usuario.password),
         xp_total=0,
         nivel=1,
         creado_en=datetime.now(),

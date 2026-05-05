@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models.user import Usuario
 from app.config import obtener_nivel_desde_xp
 from app.services.streak_manager import calcular_racha
+from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/usuarios/{usuario_id}", tags=["Estadísticas"])
 
@@ -28,7 +29,11 @@ def obtener_usuario_activo(usuario_id: int, db: Session) -> Usuario:
 
 
 @router.get("/estadisticas")
-def estadisticas(usuario_id: int, db: Session = Depends(get_db)):
+def estadisticas(
+    usuario_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Obtiene las estadísticas consolidadas del usuario"""
     usuario = obtener_usuario_activo(usuario_id, db)
 

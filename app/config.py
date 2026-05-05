@@ -1,6 +1,7 @@
 """
 Centralized configuration for Sistema Imbatible
 """
+import os
 from datetime import timedelta
 from enum import Enum
 from typing import Callable, Dict
@@ -12,6 +13,15 @@ from typing import Callable, Dict
 
 DATABASE_URL = "postgresql://kevin_admin:admin12345@localhost:5432/sistema_imbatible_db"
 SESSION_EXPIRE_MINUTES = 30
+
+
+# ============================================================================
+# JWT AUTHENTICATION
+# ============================================================================
+
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
 
 # ============================================================================

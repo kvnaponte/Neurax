@@ -14,6 +14,7 @@ class Usuario(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
     active = Column(Boolean, default=True)
     xp_total = Column(Integer, default=0)
     nivel = Column(Integer, default=1)
