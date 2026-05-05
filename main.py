@@ -2,15 +2,20 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime, timedelta
-from enum import Enum
 from typing import Optional
 from sqlalchemy.orm import Session
-from database import init_db, get_db, Usuario, Actividad, Hito, HitoTipo, TipoActividad
+from database import init_db, get_db, Usuario, Actividad, Hito
+from config import (
+    APP_TITLE, APP_DESCRIPTION, APP_VERSION,
+    CORS_ORIGINS, CORS_ALLOW_CREDENTIALS, CORS_ALLOW_METHODS, CORS_ALLOW_HEADERS,
+    Nivel, TipoActividad, HitoTipo, MENSAJE_USUARIO_NO_ENCONTRADO,
+    calcular_xp_actividad, obtener_nivel_desde_xp
+)
 
 app = FastAPI(
-    title="Sistema Imbatible",
-    description="RPG de la vida real para optimizar comportamiento y productividad",
-    version="1.0.0"
+    title=APP_TITLE,
+    description=APP_DESCRIPTION,
+    version=APP_VERSION
 )
 
 init_db()
@@ -18,23 +23,11 @@ init_db()
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=CORS_ALLOW_CREDENTIALS,
+    allow_methods=CORS_ALLOW_METHODS,
+    allow_headers=CORS_ALLOW_HEADERS,
 )
-
-# ============================================================================
-# ENUMS
-# ============================================================================
-
-class Nivel(int, Enum):
-    SUPERVIVIENTE_1 = 1
-    SUPERVIVIENTE_2 = 2
-    EJECUTOR_3 = 3
-    EJECUTOR_4 = 4
-    IMBATIBLE_5 = 5
-    IMBATIBLE_6 = 6
 
 # ============================================================================
 # MODELOS
@@ -82,37 +75,6 @@ class UsuarioCreate(BaseModel):
     email: str
 
 # ============================================================================
-# CONFIG
-# ============================================================================
-
-ACTIVIDAD_XP = {
-    TipoActividad.SUEÑO: lambda mins: 20 if mins >= 345 else 10,
-    TipoActividad.EJERCICIO: lambda mins: 15 if mins >= 60 else 5,
-    TipoActividad.ESTUDIO: lambda mins: 25 if mins >= 50 else 10,
-    TipoActividad.TRABAJO: lambda mins: 10,
-    TipoActividad.TRANSPORTE: lambda mins: 5,
-    TipoActividad.MUSICA: lambda mins: 20,
-}
-
-NIVELES_XP = {
-    1: 0,
-    2: 100,
-    3: 250,
-    4: 450,
-    5: 700,
-    6: 1000,
-}
-
-DESCRIPCIONES_NIVEL = {
-    1: "Superviviente",
-    2: "Superviviente",
-    3: "Ejecutor",
-    4: "Ejecutor",
-    5: "Imbatible",
-    6: "Imbatible",
-}
-
-# ============================================================================
 # HELPERS
 # ============================================================================
 
@@ -123,20 +85,17 @@ def obtener_usuario_activo(usuario_id: int, db: Session):
     ).first()
 
     if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario no disponible")
+        raise HTTPException(status_code=404, detail=MENSAJE_USUARIO_NO_ENCONTRADO)
 
     return usuario
 
 
 def calcular_nivel(xp_total: int) -> Nivel:
-    for nivel in range(6, 0, -1):
-        if xp_total >= NIVELES_XP[nivel]:
-            return Nivel(nivel)
-    return Nivel.SUPERVIVIENTE_1
+    return obtener_nivel_desde_xp(xp_total)
 
 
 def calcular_xp(tipo: TipoActividad, duracion: int):
-    return ACTIVIDAD_XP.get(tipo, lambda x: 0)(duracion)
+    return calcular_xp_actividad(tipo, duracion)
 
 
 def obtener_racha(usuario_id: int, db: Session):
