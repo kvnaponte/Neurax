@@ -60,6 +60,7 @@
 <div class="dashboard">
 	<Navbar
 		{usuario}
+		currentPage="dashboard"
 		on:logout={handleLogout}
 		on:navigate={(e) => navigate(e.detail)}
 	/>

@@ -94,6 +94,7 @@
 <div class="actividades-page">
 	<Navbar
 		{usuario}
+		currentPage="actividades"
 		on:logout={handleLogout}
 		on:navigate={(e) => navigate(e.detail)}
 	/>

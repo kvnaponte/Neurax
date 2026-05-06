@@ -100,6 +100,7 @@
 <div class="hitos-page">
 	<Navbar
 		{usuario}
+		currentPage="hitos"
 		on:logout={handleLogout}
 		on:navigate={(e) => navigate(e.detail)}
 	/>
