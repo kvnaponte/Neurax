@@ -19,7 +19,14 @@ class Actividad(Base):
     xp_generado = Column(Integer, default=0)
     descripcion = Column(String, nullable=True)
     timestamp = Column(DateTime, default=datetime.now)
-
+    
+    # Campos específicos para áreas
+    area = Column(String, nullable=True)  # economica, fisico, rutinarias
+    cuerpo_trabajado = Column(String, nullable=True)  # Para área físico: tricep, espalda, etc.
+    repeticiones = Column(Integer, nullable=True)  # Para ejercicios
+    monto = Column(Integer, nullable=True)  # Para ingresos/egresos
+    destino = Column(String, nullable=True)  # Para planificación financiera
+    
     usuario = relationship("Usuario", back_populates="actividades")
 
     def __repr__(self):

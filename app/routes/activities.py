@@ -17,6 +17,13 @@ from app.schemas.activity import (
 )
 from app.config import calcular_xp_actividad, obtener_nivel_desde_xp
 from app.services.streak_manager import calcular_racha
+from app.services.activity_validator import (
+    obtener_area_actividad,
+    validar_secuencia_ejercicios,
+    validar_actividad_sabado,
+    calcular_xp_con_bonus,
+    validar_limite_xp_diario
+)
 from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/usuarios/{usuario_id}", tags=["Actividades"])
@@ -46,39 +53,91 @@ def registrar_actividad(
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Registra una nueva actividad para el usuario"""
+    """Registra una nueva actividad para el usuario con validaciones por área"""
     usuario = obtener_usuario_activo(usuario_id, db)
 
-    # Calcular XP generada
-    xp = calcular_xp_actividad(actividad.tipo, actividad.duracion_minutos)
+    # Determinar área de la actividad
+    area = actividad.area or obtener_area_actividad(actividad.tipo)
+    
+    # Validaciones específicas para área físico
+    if area == "fisico":
+        # Validar secuencia de ejercicios si se especifica cuerpo trabajado
+        if actividad.cuerpo_trabajado:
+            valido, mensaje = validar_secuencia_ejercicios(
+                usuario_id, 
+                actividad.cuerpo_trabajado, 
+                db
+            )
+            if not valido:
+                raise HTTPException(status_code=400, detail=mensaje)
+        
+        # Validar regla del sábado
+        timestamp = actividad.timestamp or datetime.now()
+        valido, mensaje = validar_actividad_sabado(actividad.tipo, timestamp)
+        if not valido:
+            raise HTTPException(status_code=400, detail=mensaje)
+    
+    # Calcular XP base
+    xp_base = calcular_xp_actividad(actividad.tipo, actividad.duracion_minutos)
+    
+    # Calcular racha actual
+    racha_dias = calcular_racha(usuario_id, db)
+    
+    # Calcular XP con bonus (racha y horario óptimo)
     timestamp = actividad.timestamp or datetime.now()
-
+    xp_final = calcular_xp_con_bonus(
+        xp_base, 
+        actividad.tipo, 
+        timestamp, 
+        racha_dias, 
+        area
+    )
+    
+    # Validar límite diario de XP por área
+    valido, mensaje = validar_limite_xp_diario(usuario_id, xp_final, area, db)
+    if not valido:
+        # Permitir registro pero sin XP si excede límite
+        xp_final = 0
+    
+    # Crear actividad
     nueva = Actividad(
         usuario_id=usuario_id,
         tipo=actividad.tipo,
         duracion_minutos=actividad.duracion_minutos,
         timestamp=timestamp,
-        xp_generado=xp,
-        descripcion=actividad.descripcion
+        xp_generado=xp_final,
+        descripcion=actividad.descripcion,
+        area=area,
+        cuerpo_trabajado=actividad.cuerpo_trabajado,
+        repeticiones=actividad.repeticiones,
+        monto=actividad.monto,
+        destino=actividad.destino
     )
-
+    
     db.add(nueva)
-
-    # Actualizar usuario
-    usuario.xp_total += xp
-    usuario.nivel = obtener_nivel_desde_xp(usuario.xp_total).value
+    
+    # Actualizar usuario solo si hay XP
+    if xp_final > 0:
+        usuario.xp_total += xp_final
+        usuario.nivel = obtener_nivel_desde_xp(usuario.xp_total).value
     usuario.última_actividad = timestamp
-
+    
     db.commit()
     db.refresh(nueva)
-
+    
     return ActividadResponse(
         id=nueva.id,
         usuario_id=nueva.usuario_id,
         tipo=nueva.tipo,
         duracion_minutos=nueva.duracion_minutos,
         timestamp=nueva.timestamp,
-        xp_generado=nueva.xp_generado
+        xp_generado=nueva.xp_generado,
+        descripcion=nueva.descripcion,
+        area=nueva.area,
+        cuerpo_trabajado=nueva.cuerpo_trabajado,
+        repeticiones=nueva.repeticiones,
+        monto=nueva.monto,
+        destino=nueva.destino
     )
 
 

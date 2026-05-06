@@ -21,6 +21,12 @@ class ActividadRequest(ActividadBase):
     """Esquema para registrar una actividad"""
     timestamp: Optional[datetime] = None
     descripcion: Optional[str] = None
+    # Campos específicos por área
+    area: Optional[str] = None  # economica, fisico, rutinarias
+    cuerpo_trabajado: Optional[str] = None  # Para área físico
+    repeticiones: Optional[int] = None  # Para ejercicios
+    monto: Optional[int] = None  # Para ingresos/egresos
+    destino: Optional[str] = None  # Para planificación financiera
 
 
 class ActividadResponse(ActividadBase):
@@ -29,6 +35,12 @@ class ActividadResponse(ActividadBase):
     usuario_id: int
     timestamp: datetime
     xp_generado: int
+    descripcion: Optional[str] = None
+    area: Optional[str] = None
+    cuerpo_trabajado: Optional[str] = None
+    repeticiones: Optional[int] = None
+    monto: Optional[int] = None
+    destino: Optional[str] = None
 
     class Config:
         from_attributes = True
