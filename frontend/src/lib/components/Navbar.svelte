@@ -1,13 +1,17 @@
 <script lang="ts">
+	import { createEventDispatcher } from 'svelte';
+
 	export let usuario: any = null;
 	export let currentPage: string = 'dashboard';
 
+	const dispatch = createEventDispatcher();
+
 	function navigateTo(page: string) {
-		dispatchEvent(new CustomEvent('navigate', { detail: page }));
+		dispatch('navigate', page);
 	}
 
 	function handleLogout() {
-		dispatchEvent(new CustomEvent('logout'));
+		dispatch('logout');
 	}
 </script>
 
