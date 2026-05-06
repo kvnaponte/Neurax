@@ -47,10 +47,27 @@ if command -v docker &> /dev/null; then
             exit 1
         fi
         echo ""
-        echo "Backend en: http://localhost:1104"
-        echo "Base de datos en: localhost:5432"
+
+        # Iniciar frontend
+        echo "Iniciando frontend (Svelte)..."
+        cd frontend && npm run dev &
+        FRONTEND_PID=$!
+        success "Frontend iniciado (PID: $FRONTEND_PID)"
+
         echo ""
-        echo "Para detener: docker-compose down"
+        echo "================================"
+        echo "Proyecto iniciado!"
+        echo "================================"
+        echo "Frontend: http://localhost:5174"
+        echo "Backend: http://localhost:1104"
+        echo "Docs: http://localhost:1104/docs"
+        echo ""
+        echo "Presiona Ctrl+C para detener"
+
+        # Manejar Ctrl+C para detener frontend y docker-compose
+        trap "echo ''; warn 'Deteniendo servicios...'; kill $FRONTEND_PID 2>/dev/null; docker-compose down" INT
+
+        wait $FRONTEND_PID 2>/dev/null
     else
         error "docker-compose no está instalado"
         exit 1
