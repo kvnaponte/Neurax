@@ -13,7 +13,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql/data
 
 # Servicio del Backend (FastAPI)
   backend:
@@ -27,6 +27,3 @@ services:
       DATABASE_URL: postgresql://kevin_admin:admin12345@db:5432/sistema_imbatible_db
     depends_on:
       - db
-
-volumes:
-  postgres_data:
