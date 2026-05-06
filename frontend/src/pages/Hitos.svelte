@@ -1,9 +1,12 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { hitosAPI } from '$lib/services/api';
+	import { onMount, createEventDispatcher } from 'svelte';
+	import { hitosAPI, usuariosAPI } from '$lib/services/api';
 	import Navbar from '$lib/components/Navbar.svelte';
 
 	export let usuarioId: number;
+	
+	const dispatch = createEventDispatcher();
+	
 	let usuario: any = null;
 	let hitos: any[] = [];
 	let isLoading: boolean = true;
@@ -13,20 +16,31 @@
 	let isSubmitting: boolean = false;
 
 	function handleLogout() {
-		dispatchEvent(new CustomEvent('logout'));
+		dispatch('logout');
 	}
 
 	function navigate(page: string) {
-		dispatchEvent(new CustomEvent('navigate', { detail: page }));
+		dispatch('navigate', page);
 	}
 
 	async function loadHitos() {
 		try {
 			isLoading = true;
-			const response = await hitosAPI.obtener(usuarioId);
-			hitos = response.data;
+			const [userResponse, response] = await Promise.all([
+				usuariosAPI.obtener(usuarioId),
+				hitosAPI.obtener(usuarioId)
+			]);
+			usuario = userResponse.data || userResponse;
+			hitos = response.data || response;
 		} catch (err: any) {
+			console.error('Error al cargar hitos:', err);
 			error = err.message || 'Error al cargar hitos';
+			if (err.message.includes('sesión inválida') || err.message.includes('no encontrado')) {
+				localStorage.removeItem('access_token');
+				localStorage.removeItem('usuario_id');
+				dispatch('logout');
+				return;
+			}
 		} finally {
 			isLoading = false;
 		}

@@ -1,10 +1,13 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { actividadesAPI } from '$lib/services/api';
+	import { onMount, createEventDispatcher } from 'svelte';
+	import { actividadesAPI, usuariosAPI } from '$lib/services/api';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import ActividadForm from '$lib/components/ActividadForm.svelte';
 
 	export let usuarioId: number;
+	
+	const dispatch = createEventDispatcher();
+	
 	let usuario: any = null;
 	let actividades: any[] = [];
 	let isLoading: boolean = true;
@@ -13,20 +16,31 @@
 	let dias: number = 7;
 
 	function handleLogout() {
-		dispatchEvent(new CustomEvent('logout'));
+		dispatch('logout');
 	}
 
 	function navigate(page: string) {
-		dispatchEvent(new CustomEvent('navigate', { detail: page }));
+		dispatch('navigate', page);
 	}
 
 	async function loadActividades() {
 		try {
 			isLoading = true;
-			const response = await actividadesAPI.obtener(usuarioId, dias);
-			actividades = response.data;
+			const [userResponse, response] = await Promise.all([
+				usuariosAPI.obtener(usuarioId),
+				actividadesAPI.obtener(usuarioId, dias)
+			]);
+			usuario = userResponse.data || userResponse;
+			actividades = response.data || response;
 		} catch (err: any) {
+			console.error('Error al cargar actividades:', err);
 			error = err.message || 'Error al cargar actividades';
+			if (err.message.includes('sesión inválida') || err.message.includes('no encontrado')) {
+				localStorage.removeItem('access_token');
+				localStorage.removeItem('usuario_id');
+				dispatch('logout');
+				return;
+			}
 		} finally {
 			isLoading = false;
 		}

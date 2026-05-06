@@ -5,15 +5,16 @@ node_modules/
 # Build artifacts
 dist/
 build/
-*.js
-*.ts
+.nuxt/
+.next/
+public/build/
 
-# Environment
+# Environment variables
 .env
 .env.local
-*.env.*
+*.env
 
-# Editors
+# Editor/IDE files
 .vscode/
 .idea/
 *.swp
@@ -23,31 +24,48 @@ build/
 # Logs
 *.log
 
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Python
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
-.pytest_cache/
-.mypy_cache/
 
-# Node
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
 
-# OS
+# Temporary files
+*.tmp
+*~
 .DS_Store
 Thumbs.db
+
+# MyPy cache
+.mypy_cache/
+# Pytest cache
+.pytest_cache/
+
+# Distribution / packaging
+.Python
+*.egg-info/
+.eggs/
+.installed.cfg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# SvelteKit specific
+.svelte-kit/
+.output/
+
+# Vite specific
+.vite/
 ```

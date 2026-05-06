@@ -1,20 +1,23 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { usuariosAPI, estadisticasAPI } from '$lib/services/api';
 	import Navbar from '$lib/components/Navbar.svelte';
 
 	export let usuarioId: number;
+	
+	const dispatch = createEventDispatcher();
+	
 	let usuario: any = null;
 	let estadisticas: any = null;
 	let isLoading: boolean = true;
 	let error: string | null = null;
 
 	function handleLogout() {
-		dispatchEvent(new CustomEvent('logout'));
+		dispatch('logout');
 	}
 
 	function navigate(page: string) {
-		dispatchEvent(new CustomEvent('navigate', { detail: page }));
+		dispatch('navigate', page);
 	}
 
 	async function loadData() {
@@ -23,10 +26,17 @@
 			const userResponse = await usuariosAPI.obtener(usuarioId);
 			const statsResponse = await estadisticasAPI.obtener(usuarioId);
 
-			usuario = userResponse.data;
-			estadisticas = statsResponse.data;
+			usuario = userResponse.data || userResponse;
+			estadisticas = statsResponse.data || statsResponse;
 		} catch (err: any) {
+			console.error('Error al cargar perfil:', err);
 			error = err.message || 'Error al cargar perfil';
+			if (err.message.includes('sesión inválida') || err.message.includes('no encontrado')) {
+				localStorage.removeItem('access_token');
+				localStorage.removeItem('usuario_id');
+				dispatch('logout');
+				return;
+			}
 		} finally {
 			isLoading = false;
 		}
