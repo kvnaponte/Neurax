@@ -65,8 +65,19 @@ DESCRIPCIONES_NIVEL: Dict[int, str] = {
 
 class TipoActividad(str, Enum):
     """Types of trackable activities"""
+    # Área Económica
+    INGRESO = "ingreso"
+    EGRESO = "egreso"
+    PLANIFICACION_FINANCIERA = "planificacion_financiera"
+    
+    # Área Físico
+    EJERCICIO_FUERZA = "ejercicio_fuerza"
+    EJERCICIO_CARDIO = "ejercicio_cardio"
+    BARRAS = "barras"
+    TROTE = "trote"
+    
+    # Área Rutinarias
     SUEÑO = "sueño"
-    EJERCICIO = "ejercicio"
     ESTUDIO = "estudio"
     TRABAJO = "trabajo"
     TRANSPORTE = "transporte"
@@ -82,13 +93,46 @@ class HitoTipo(str, Enum):
 
 
 # XP generation rules per activity
+# Área Económica: XP por gestión financiera
+# Área Físico: XP por ejercicios específicos con reglas especiales
+# Área Rutinarias: XP por hábitos diarios
+
 ACTIVIDAD_XP: Dict[TipoActividad, Callable[[int], int]] = {
-    TipoActividad.SUEÑO: lambda mins: 20 if mins >= 345 else 10,
-    TipoActividad.EJERCICIO: lambda mins: 15 if mins >= 60 else 5,
+    # Área Económica - XP basado en registro y planificación
+    TipoActividad.INGRESO: lambda mins: 15,  # Registrar ingreso genera XP fijo
+    TipoActividad.EGRESO: lambda mins: 10,  # Registrar egreso genera XP fijo
+    TipoActividad.PLANIFICACION_FINANCIERA: lambda mins: 25 if mins >= 30 else 15,
+    
+    # Área Físico - XP diferenciado por tipo de ejercicio
+    TipoActividad.EJERCICIO_FUERZA: lambda mins: 20 if mins >= 45 else 12,
+    TipoActividad.EJERCICIO_CARDIO: lambda mins: 18 if mins >= 30 else 10,
+    TipoActividad.BARRAS: lambda mins: 25 if mins >= 20 else 15,  # Sábado especial
+    TipoActividad.TROTE: lambda mins: 20 if mins >= 30 else 12,  # Sábado especial
+    
+    # Área Rutinarias - XP por hábitos diarios
+    TipoActividad.SUEÑO: lambda mins: 20 if mins >= 345 else 10,  # 5.75h mínimo
     TipoActividad.ESTUDIO: lambda mins: 25 if mins >= 50 else 10,
     TipoActividad.TRABAJO: lambda mins: 10,
     TipoActividad.TRANSPORTE: lambda mins: 5,
     TipoActividad.MUSICA: lambda mins: 20,
+}
+
+# Reglas específicas para actividades físicas
+REGLAS_EJERCICIO = {
+    # Después de tríceps no puede haber espalda
+    "secuencias_prohibidas": [
+        ("tricep", "espalda"),
+    ],
+    # Actividades del sábado
+    "sabado": [TipoActividad.TROTE, TipoActividad.BARRAS],
+    # Descanso requerido entre grupos musculares (en horas)
+    "descanso_muscular": {
+        "pecho": 48,
+        "espalda": 48,
+        "piernas": 72,
+        "hombros": 48,
+        "brazos": 36,
+    }
 }
 
 
@@ -122,6 +166,27 @@ MAX_DURACION_ACTIVIDAD_MINUTES = 1440
 MIN_DURACION_ACTIVIDAD_MINUTES = 1
 MAX_XP_HITO = 100
 MAX_DIAS_HISTORIAL = 365
+
+# Límites de XP por área (diario)
+LIMITE_XP_DIARIO = {
+    "economica": 50,      # Máximo XP diario por actividades económicas
+    "fisico": 80,         # Máximo XP diario por actividades físicas
+    "rutinarias": 100,    # Máximo XP diario por rutinas
+}
+
+# Bonus especiales
+BONUS_RACHA = {
+    3: 1.1,   # 3 días: 10% bonus
+    7: 1.25,  # 7 días: 25% bonus
+    14: 1.5,  # 14 días: 50% bonus
+    30: 2.0,  # 30 días: 100% bonus
+}
+
+# Bonus por horario óptimo (ejercicio mañana temprano)
+HORARIO_OPTIMO = {
+    "ejercicio": {"hora_inicio": 6, "hora_fin": 9, "bonus": 1.15},
+    "estudio": {"hora_inicio": 5, "hora_fin": 8, "bonus": 1.1},
+}
 
 
 # ============================================================================
