@@ -13,11 +13,11 @@
 	let isSubmitting: boolean = false;
 
 	function handleLogout() {
-		this.dispatchEvent(new CustomEvent('logout'));
+		dispatchEvent(new CustomEvent('logout'));
 	}
 
 	function navigate(page: string) {
-		this.dispatchEvent(new CustomEvent('navigate', { detail: page }));
+		dispatchEvent(new CustomEvent('navigate', { detail: page }));
 	}
 
 	async function loadHitos() {
