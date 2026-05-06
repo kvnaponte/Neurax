@@ -86,6 +86,7 @@
 <div class="perfil-page">
 	<Navbar
 		{usuario}
+		currentPage="perfil"
 		on:logout={handleLogout}
 		on:navigate={(e) => navigate(e.detail)}
 	/>

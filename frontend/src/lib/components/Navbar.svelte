@@ -1,5 +1,6 @@
 <script lang="ts">
 	export let usuario: any = null;
+	export let currentPage: string = 'dashboard';
 
 	function navigateTo(page: string) {
 		dispatchEvent(new CustomEvent('navigate', { detail: page }));
@@ -20,28 +21,28 @@
 		<div class="navbar-menu">
 			<button 
 				class="nav-btn" 
-				class:active={false}
+				class:active={currentPage === 'dashboard'}
 				on:click={() => navigateTo('dashboard')}
 			>
 				Dashboard
 			</button>
 			<button 
 				class="nav-btn" 
-				class:active={false}
+				class:active={currentPage === 'actividades'}
 				on:click={() => navigateTo('actividades')}
 			>
 				Actividades
 			</button>
 			<button 
 				class="nav-btn" 
-				class:active={false}
+				class:active={currentPage === 'hitos'}
 				on:click={() => navigateTo('hitos')}
 			>
 				Hitos
 			</button>
 			<button 
 				class="nav-btn" 
-				class:active={false}
+				class:active={currentPage === 'perfil'}
 				on:click={() => navigateTo('perfil')}
 			>
 				Perfil
