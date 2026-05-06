@@ -24,13 +24,17 @@
 				response = await authAPI.register(nombre, email, password);
 			}
 
-			const { access_token, usuario_id } = response.data;
+			if (!response.access_token) {
+				throw new Error(response.detail || 'Error al procesar la solicitud');
+			}
+
+			const { access_token, usuario_id } = response;
 			localStorage.setItem('access_token', access_token);
 			localStorage.setItem('usuario_id', usuario_id.toString());
 
 			dispatch('login', { usuarioId: usuario_id });
 		} catch (err: any) {
-			error = err.response?.data?.detail || 'Error al procesar la solicitud';
+			error = err.message || 'Error al procesar la solicitud';
 		} finally {
 			isLoading = false;
 		}

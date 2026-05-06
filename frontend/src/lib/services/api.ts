@@ -74,10 +74,29 @@ export const hitosAPI = {
 };
 
 export const authAPI = {
-login: (email: string, password: string) =>
-fetch(`${API_BASE}/auth/login`, {
-method: 'POST',
-headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-body: new URLSearchParams({ username: email, password }).toString()
-}).then(res => res.json())
+	login: async (email: string, password: string) => {
+		const res = await fetch(`${API_BASE}/auth/login`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ email, password })
+		});
+		const data = await res.json();
+		if (!res.ok) {
+			throw new Error(data.detail || 'Error al iniciar sesión');
+		}
+		return data;
+	},
+
+	register: async (nombre: string, email: string, password: string) => {
+		const res = await fetch(`${API_BASE}/auth/register`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ nombre, email, password })
+		});
+		const data = await res.json();
+		if (!res.ok) {
+			throw new Error(data.detail || 'Error al registrarse');
+		}
+		return data;
+	}
 };
