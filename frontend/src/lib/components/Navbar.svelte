@@ -23,28 +23,28 @@
 				class:active={false}
 				on:click={() => navigateTo('dashboard')}
 			>
-				📊 Dashboard
+				Dashboard
 			</button>
 			<button 
 				class="nav-btn" 
 				class:active={false}
 				on:click={() => navigateTo('actividades')}
 			>
-				✅ Actividades
+				Actividades
 			</button>
 			<button 
 				class="nav-btn" 
 				class:active={false}
 				on:click={() => navigateTo('hitos')}
 			>
-				🏆 Hitos
+				Hitos
 			</button>
 			<button 
 				class="nav-btn" 
 				class:active={false}
 				on:click={() => navigateTo('perfil')}
 			>
-				👤 Perfil
+				Perfil
 			</button>
 		</div>
 
@@ -54,7 +54,7 @@
 				<span class="user-level">Nivel {usuario.nivel}</span>
 			{/if}
 			<button class="btn-logout" on:click={handleLogout}>
-				🚪 Salir
+				Salir
 			</button>
 		</div>
 	</div>

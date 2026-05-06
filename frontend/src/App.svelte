@@ -24,6 +24,7 @@
 	onMount(() => {
 		const token = localStorage.getItem('access_token');
 		const stored = localStorage.getItem('usuario_id');
+		
 		if (token && stored) {
 			const decoded = decodeToken(token);
 			if (decoded && decoded.exp && decoded.exp * 1000 > Date.now()) {
@@ -32,7 +33,10 @@
 			} else {
 				localStorage.removeItem('access_token');
 				localStorage.removeItem('usuario_id');
+				currentPage = 'login';
 			}
+		} else {
+			currentPage = 'login';
 		}
 	});
 

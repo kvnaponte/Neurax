@@ -31,10 +31,17 @@
 			const userResponse = await usuariosAPI.obtener(usuarioId);
 			const statsResponse = await estadisticasAPI.obtener(usuarioId);
 
-			usuario = userResponse.data;
-			estadisticas = statsResponse.data;
+			usuario = userResponse.data || userResponse;
+			estadisticas = statsResponse.data || statsResponse;
 		} catch (err: any) {
+			console.error('Error al cargar datos:', err);
 			error = err.message || 'Error al cargar datos';
+			if (err.message.includes('sesión inválida') || err.message.includes('no encontrado')) {
+				localStorage.removeItem('access_token');
+				localStorage.removeItem('usuario_id');
+				dispatch('logout');
+				return;
+			}
 		} finally {
 			isLoading = false;
 		}
