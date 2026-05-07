@@ -4,403 +4,229 @@
 	import Navbar from '$lib/components/Navbar.svelte';
 
 	export let usuarioId: number;
-	
 	const dispatch = createEventDispatcher();
-	
+
 	let usuario: any = null;
 	let estadisticas: any = null;
-	let isLoading: boolean = true;
+	let isLoading = true;
 	let error: string | null = null;
 
-	function handleLogout() {
-		dispatch('logout');
-	}
+	const NIVELES = [
+		{ n: 1, name: 'Superviviente', range: '0 – 99 XP', color: '#22c55e' },
+		{ n: 2, name: 'Aprendiz', range: '100 – 249 XP', color: '#38bdf8' },
+		{ n: 3, name: 'Guerrero', range: '250 – 499 XP', color: '#a78bfa' },
+		{ n: 4, name: 'Veterano', range: '500 – 999 XP', color: '#f4c542' },
+		{ n: 5, name: 'Campeón', range: '1000 – 1999 XP', color: '#fb923c' },
+		{ n: 6, name: 'Imbatible', range: '2000+ XP', color: '#d946ef' }
+	];
 
-	function navigate(page: string) {
-		dispatch('navigate', page);
-	}
+	function handleLogout() { dispatch('logout'); }
+	function navigate(p: string) { dispatch('navigate', p); }
 
-	async function loadData() {
+	async function load() {
 		try {
 			isLoading = true;
-			const userResponse = await usuariosAPI.obtener(usuarioId);
-			const statsResponse = await estadisticasAPI.obtener(usuarioId);
-
-			usuario = userResponse.data || userResponse;
-			estadisticas = statsResponse.data || statsResponse;
+			const [u, s] = await Promise.all([
+				usuariosAPI.obtener(usuarioId),
+				estadisticasAPI.obtener(usuarioId).catch(() => null)
+			]);
+			usuario = u.data || u;
+			estadisticas = s ? (s.data || s) : null;
 		} catch (err: any) {
-			console.error('Error al cargar perfil:', err);
-			error = err.message || 'Error al cargar perfil';
-			if (err.message.includes('sesión inválida') || err.message.includes('no encontrado')) {
-				localStorage.removeItem('access_token');
-				localStorage.removeItem('usuario_id');
-				dispatch('logout');
-				return;
-			}
+			error = err.message || 'Error';
+			if ((err.message || '').includes('sesión inválida')) { localStorage.clear(); dispatch('logout'); }
 		} finally {
 			isLoading = false;
 		}
 	}
 
-	async function handleDesactivar() {
-		if (!confirm('¿Estás seguro de que deseas desactivar tu cuenta?')) return;
-
+	async function desactivar() {
+		if (!confirm('¿Desactivar cuenta? Esta acción no se puede deshacer.')) return;
 		try {
 			await usuariosAPI.desactivar(usuarioId);
-			localStorage.removeItem('usuarioId');
-			handleLogout();
+			localStorage.clear();
+			dispatch('logout');
 		} catch (err: any) {
-			error = err.response?.data?.detail || 'Error al desactivar cuenta';
+			error = err.message || 'Error al desactivar';
 		}
 	}
 
-	onMount(() => {
-		loadData();
-	});
+	$: nivelActual = usuario ? NIVELES.find(l => l.n === usuario.nivel) || NIVELES[0] : NIVELES[0];
+	$: nextLevel = usuario ? NIVELES.find(l => l.n === usuario.nivel + 1) : null;
 
-	function formatDate(dateString: string | null): string {
-		if (!dateString) return 'Nunca';
-		const date = new Date(dateString);
-		return date.toLocaleDateString('es-ES', {
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
-	}
-
-	function getNivelName(nivel: number): string {
-		const nombres: Record<number, string> = {
-			1: 'Superviviente 1',
-			2: 'Superviviente 2',
-			3: 'Ejecutor 3',
-			4: 'Ejecutor 4',
-			5: 'Imbatible 5',
-			6: 'Imbatible 6'
-		};
-		return nombres[nivel] || 'Desconocido';
-	}
+	onMount(load);
 </script>
 
-<div class="perfil-page">
-	<Navbar
-		{usuario}
-		currentPage="perfil"
-		on:logout={handleLogout}
-		on:navigate={(e) => navigate(e.detail)}
-	/>
+<div class="page">
+	<header class="page-header">
+		<button class="back" on:click={() => navigate('dashboard')} aria-label="Volver">‹</button>
+		<h1 class="page-title">Tu Progreso</h1>
+		<button class="back ghost" aria-label="Compartir">↗</button>
+	</header>
 
-	<main class="main-content">
-		<div class="container">
-			{#if isLoading}
-				<div class="loading">
-					<div class="spinner"></div>
-					<p>Cargando perfil...</p>
+	{#if isLoading}
+		<div class="center-screen"><div class="spinner"></div></div>
+	{:else if error}
+		<div class="error-message">{error}</div>
+	{:else if usuario}
+		<section class="hero" style="--c:{nivelActual.color}">
+			<div class="hero-inner">
+				<div class="hero-badge">
+					<svg viewBox="0 0 80 90" width="68" height="76">
+						<defs>
+							<linearGradient id="hb" x1="0" y1="0" x2="0" y2="1">
+								<stop offset="0%" stop-color="#fde68a"/>
+								<stop offset="100%" stop-color="#b88a14"/>
+							</linearGradient>
+						</defs>
+						<polygon points="40,4 72,18 68,60 40,86 12,60 8,18" fill="{nivelActual.color}" stroke="url(#hb)" stroke-width="2.5"/>
+						<text x="40" y="50" text-anchor="middle" font-family="Cinzel" font-weight="800" font-size="28" fill="#fde68a">{nivelActual.n}</text>
+					</svg>
 				</div>
-			{:else if error}
-				<div class="error-message">
-					{error}
+				<div class="hero-text">
+					<h2 class="hero-title font-display">{nivelActual.name}</h2>
+					<p class="hero-sub">En camino hacia la grandeza</p>
 				</div>
-			{:else if usuario}
-				<div class="header">
-					<h1>Mi Perfil</h1>
-				</div>
+			</div>
+			<div class="hero-bar">
+				<span class="hero-num text-mono">{usuario.xp_total} / {nextLevel ? NIVELES.find(l => l.n === nextLevel.n)?.range.split(' – ')[0] || '?' : '∞'} XP</span>
+				<div class="bar"><div class="bar-fill" style="width:{nextLevel ? Math.min(100, (usuario.xp_total / 500) * 100) : 100}%"></div></div>
+			</div>
+		</section>
 
-				<div class="perfil-grid">
-					<div class="profile-card card">
-						<div class="profile-header">
-							<div class="avatar">
-								{usuario.nombre.charAt(0).toUpperCase()}
-							</div>
-							<div class="profile-info">
-								<h2>{usuario.nombre}</h2>
-								<p class="email">{usuario.email}</p>
-								<p class="nivel-badge">
-									{getNivelName(usuario.nivel)}
-								</p>
-							</div>
-						</div>
+		<section class="ladder">
+			{#each NIVELES as l}
+				{@const reached = usuario.nivel >= l.n}
+				{@const current = usuario.nivel === l.n}
+				<div class="rung" class:reached class:current style="--c:{l.color}">
+					<div class="rung-num">
+						<svg viewBox="0 0 40 44" width="36" height="40">
+							<polygon points="20,2 36,10 36,30 20,42 4,30 4,10" fill={reached ? l.color : '#1a1538'} stroke={reached ? '#f4c542' : '#3a2f5f'} stroke-width="2"/>
+							<text x="20" y="26" text-anchor="middle" font-family="Cinzel" font-weight="800" font-size="14" fill={reached ? '#fde68a' : '#7d6db0'}>{l.n}</text>
+						</svg>
 					</div>
-
-					<div class="stats-card card">
-						<h3>Estadísticas</h3>
-						<div class="stat-row">
-							<span class="stat-label">XP Total</span>
-							<span class="stat-value">{usuario.xp_total}</span>
-						</div>
-						<div class="stat-row">
-							<span class="stat-label">Nivel Actual</span>
-							<span class="stat-value">{usuario.nivel}/6</span>
-						</div>
-						<div class="stat-row">
-							<span class="stat-label">Racha de Días</span>
-							<span class="stat-value">{usuario.racha_dias} 🔥</span>
-						</div>
-						<div class="stat-row">
-							<span class="stat-label">Última Actividad</span>
-							<span class="stat-value">{formatDate(usuario.última_actividad)}</span>
-						</div>
+					<div class="rung-body">
+						<p class="rung-name">{l.name}</p>
+						<p class="rung-range text-mono">{l.range}</p>
+					</div>
+					<div class="rung-state">
+						{#if current}<span class="dot-live"></span>
+						{:else if reached}<span class="check">✓</span>
+						{:else}<span class="lock">🔒</span>{/if}
 					</div>
 				</div>
+			{/each}
+		</section>
 
-				{#if estadisticas}
-					<div class="details-card card">
-						<h3>Detalles</h3>
-						<div class="detail-group">
-							<span class="detail-label">XP Acumulado</span>
-							<span class="detail-value">{estadisticas.xp_total}</span>
-						</div>
-						<div class="detail-group">
-							<span class="detail-label">Nivel</span>
-							<span class="detail-value">{estadisticas.nivel}</span>
-						</div>
-						<div class="detail-group">
-							<span class="detail-label">Racha Actual</span>
-							<span class="detail-value">{estadisticas.racha} días</span>
-						</div>
-					</div>
-				{/if}
+		<section class="profile-meta">
+			<div class="row">
+				<span>Email</span><strong>{usuario.email}</strong>
+			</div>
+			<div class="row">
+				<span>Racha actual</span><strong style="color:var(--ember)">{usuario.racha_dias} días 🔥</strong>
+			</div>
+			<div class="row">
+				<span>XP total</span><strong style="color:var(--gold)">{usuario.xp_total}</strong>
+			</div>
+		</section>
 
-				<div class="actions">
-					<button class="btn btn-secondary">
-						📊 Descargar Datos
-					</button>
-					<button class="btn btn-danger" on:click={handleDesactivar}>
-						⛔ Desactivar Cuenta
-					</button>
-				</div>
-			{/if}
+		<div class="actions">
+			<button class="btn btn-secondary" on:click={handleLogout}>⏻ Cerrar sesión</button>
+			<button class="btn btn-danger" on:click={desactivar}>⛔ Desactivar cuenta</button>
 		</div>
-	</main>
+	{/if}
 </div>
 
+<Navbar {usuario} currentPage="perfil" on:navigate={(e) => navigate(e.detail)} on:logout={handleLogout} />
+
 <style>
-	.perfil-page {
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-		background-color: var(--color-bg);
+	.back {
+		width: 36px; height: 36px;
+		display: grid; place-items: center;
+		background: var(--surface); border: 1px solid var(--border);
+		color: var(--text); border-radius: 12px;
+		font-size: 1.2rem; cursor: pointer;
+	}
+	.back.ghost { background: transparent; }
+	.page-header { display: grid; grid-template-columns: 36px 1fr 36px; align-items: center; }
+	.page-title { text-align: center; font-size: 1.05rem; font-weight: 700; }
+
+	.center-screen { display: grid; place-items: center; padding: 4rem 1rem; }
+
+	.hero {
+		padding: 1.25rem;
+		background:
+			linear-gradient(135deg, color-mix(in oklch, var(--c) 22%, transparent), transparent 60%),
+			linear-gradient(180deg, #1f1747, #15102e);
+		border: 1px solid color-mix(in oklch, var(--c) 35%, transparent);
+		border-radius: 20px;
+		box-shadow: 0 0 30px color-mix(in oklch, var(--c) 18%, transparent);
+	}
+	.hero-inner { display: flex; gap: 0.85rem; align-items: center; }
+	.hero-badge { filter: drop-shadow(0 0 14px color-mix(in oklch, var(--c) 50%, transparent)); }
+	.hero-title { font-size: 1.4rem; font-weight: 800; }
+	.hero-sub { font-size: 0.82rem; color: var(--text-2); margin-top: 0.15rem; }
+
+	.hero-bar { margin-top: 0.85rem; }
+	.hero-num {
+		display: block; text-align: right;
+		font-size: 0.78rem; color: var(--gold); font-weight: 700; margin-bottom: 0.35rem;
+	}
+	.bar {
+		height: 8px;
+		background: rgba(7,6,15,0.6);
+		border-radius: 999px;
+		overflow: hidden;
+		border: 1px solid var(--border);
+	}
+	.bar-fill {
+		height: 100%;
+		background: linear-gradient(90deg, var(--c), var(--gold));
+		box-shadow: 0 0 12px var(--c);
+		border-radius: 999px;
 	}
 
-	.main-content {
-		flex: 1;
-		padding: 2rem 0;
-	}
-
-	.container {
-		max-width: 800px;
-		margin: 0 auto;
-		padding: 0 1rem;
-	}
-
-	.header {
-		margin-bottom: 2rem;
-	}
-
-	.header h1 {
-		font-size: 2rem;
-		margin: 0;
-	}
-
-	.loading {
-		display: flex;
-		flex-direction: column;
+	.ladder { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+	.rung {
+		display: grid; grid-template-columns: 40px 1fr auto; gap: 0.85rem;
 		align-items: center;
-		justify-content: center;
-		padding: 3rem;
+		padding: 0.7rem 0.85rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 14px;
+		opacity: 0.6;
 	}
-
-	.spinner {
-		width: 3rem;
-		height: 3rem;
-		border: 3px solid rgba(99, 102, 241, 0.2);
-		border-top-color: var(--color-primary);
-		border-radius: 50%;
-		animation: spin 0.8s linear infinite;
-		margin-bottom: 1rem;
+	.rung.reached { opacity: 1; }
+	.rung.current {
+		border-color: var(--c);
+		background: linear-gradient(135deg, color-mix(in oklch, var(--c) 18%, transparent), var(--surface) 60%);
+		box-shadow: 0 0 20px color-mix(in oklch, var(--c) 25%, transparent);
 	}
-
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
+	.rung-name { font-weight: 700; font-size: 0.92rem; }
+	.rung-range { font-size: 0.72rem; color: var(--text-3); }
+	.rung-state .dot-live {
+		display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+		background: var(--c); box-shadow: 0 0 12px var(--c);
+		animation: pulse-glow 1.6s ease-in-out infinite;
 	}
+	.check { color: var(--leaf); font-weight: 800; }
+	.lock { opacity: 0.5; }
 
-	.error-message {
-		background-color: rgba(239, 68, 68, 0.1);
-		border: 1px solid var(--color-error);
-		color: var(--color-error);
-		padding: 1.5rem;
-		border-radius: 0.75rem;
-		text-align: center;
+	.profile-meta {
+		margin-top: 1.25rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 16px;
+		padding: 0.4rem 0.85rem;
 	}
-
-	.perfil-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 1.5rem;
-		margin-bottom: 2rem;
+	.profile-meta .row {
+		display: flex; justify-content: space-between; align-items: center;
+		padding: 0.7rem 0;
+		border-bottom: 1px solid var(--border);
+		font-size: 0.88rem;
 	}
+	.profile-meta .row:last-child { border-bottom: none; }
+	.profile-meta .row span { color: var(--text-3); }
 
-	.profile-card {
-		text-align: center;
-	}
-
-	.profile-header {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.avatar {
-		width: 100px;
-		height: 100px;
-		border-radius: 50%;
-		background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 2.5rem;
-		font-weight: 700;
-		color: white;
-	}
-
-	.profile-info h2 {
-		margin: 0 0 0.25rem 0;
-		font-size: 1.5rem;
-	}
-
-	.email {
-		color: var(--color-text-secondary);
-		margin: 0 0 0.75rem 0;
-		font-size: 0.875rem;
-	}
-
-	.nivel-badge {
-		background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-		font-weight: 700;
-		margin: 0;
-	}
-
-	.stats-card {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.stats-card h3 {
-		margin: 0;
-		font-size: 1.1rem;
-		margin-bottom: 0.5rem;
-	}
-
-	.stat-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 0.75rem;
-		background-color: var(--color-bg);
-		border-radius: 0.5rem;
-	}
-
-	.stat-label {
-		color: var(--color-text-secondary);
-		font-size: 0.875rem;
-		font-weight: 600;
-	}
-
-	.stat-value {
-		color: var(--color-primary);
-		font-size: 1.1rem;
-		font-weight: 700;
-	}
-
-	.details-card {
-		margin-bottom: 2rem;
-	}
-
-	.details-card h3 {
-		margin: 0 0 1.5rem 0;
-		font-size: 1.1rem;
-	}
-
-	.detail-group {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 1rem;
-		border-bottom: 1px solid var(--color-surface-hover);
-	}
-
-	.detail-group:last-child {
-		border-bottom: none;
-	}
-
-	.detail-label {
-		color: var(--color-text-secondary);
-		font-weight: 600;
-	}
-
-	.detail-value {
-		color: var(--color-text);
-		font-weight: 600;
-	}
-
-	.actions {
-		display: flex;
-		gap: 1rem;
-		justify-content: center;
-		flex-wrap: wrap;
-	}
-
-	.btn {
-		padding: 0.75rem 1.5rem;
-		border: none;
-		border-radius: 0.5rem;
-		cursor: pointer;
-		font-weight: 600;
-		transition: var(--transition);
-	}
-
-	.btn-secondary {
-		background-color: var(--color-surface);
-		color: var(--color-text);
-		border: 1px solid var(--color-surface-hover);
-	}
-
-	.btn-secondary:hover {
-		background-color: var(--color-surface-hover);
-	}
-
-	.btn-danger {
-		background-color: var(--color-error);
-		color: white;
-	}
-
-	.btn-danger:hover {
-		background-color: #dc2626;
-	}
-
-	@media (max-width: 768px) {
-		.header h1 {
-			font-size: 1.5rem;
-		}
-
-		.perfil-grid {
-			grid-template-columns: 1fr;
-		}
-
-		.actions {
-			flex-direction: column;
-		}
-
-		.actions button {
-			width: 100%;
-		}
-	}
+	.actions { margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
 </style>

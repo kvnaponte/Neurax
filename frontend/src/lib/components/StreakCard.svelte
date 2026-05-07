@@ -1,161 +1,68 @@
 <script lang="ts">
-export let racha: number = 0;
+	export let racha: number = 0;
+	export let mejor: number | null = null;
 
-function getStreakMessage(racha: number): string {
-if (racha === 0) return '¡Comienza tu racha!';
-if (racha < 3) return '¡Sigue así!';
-if (racha < 7) return '¡Excelente progreso!';
-if (racha < 14) return '¡Eres imparable!';
-return '¡LEYENDA!';
-}
-
-function getStreakColor(racha: number): string {
-if (racha < 3) return 'var(--color-text-secondary)';
-if (racha < 7) return 'var(--color-warning)';
-if (racha < 14) return 'var(--color-primary)';
-return 'var(--color-accent)';
-}
+	$: actual = racha;
+	$: best = mejor ?? Math.max(racha, 0);
+	$: msg = racha === 0 ? '¡Comienza hoy!' : racha < 7 ? '¡Sigue así!' : racha < 14 ? '¡Imparable!' : '¡Leyenda!';
 </script>
 
-<div class="streak-card">
-<div class="streak-header">
-<h3>Racha de Fuego 🔥</h3>
-</div>
-
-<div class="streak-content">
-<div 
-class="streak-number" 
-style="color: {getStreakColor(racha)}"
->
-{racha}
-</div>
-<p class="streak-label">días consecutivos</p>
-
-<div class="streak-message">
-{getStreakMessage(racha)}
-</div>
-
-<div class="streak-milestones">
-<div class="milestone" class:active={racha >= 3}>
-<span class="milestone-icon">🎯</span>
-<span class="milestone-label">3 días</span>
-</div>
-<div class="milestone" class:active={racha >= 7}>
-<span class="milestone-icon">⭐</span>
-<span class="milestone-label">7 días</span>
-</div>
-<div class="milestone" class:active={racha >= 14}>
-<span class="milestone-icon">🏆</span>
-<span class="milestone-label">14 días</span>
-</div>
-<div class="milestone" class:active={racha >= 30}>
-<span class="milestone-icon">👑</span>
-<span class="milestone-label">30 días</span>
-</div>
-</div>
-</div>
+<div class="streak-row">
+	<div class="streak-card">
+		<header><span class="ember" aria-hidden="true">🔥</span><span class="title">RACHA ACTUAL</span></header>
+		<div class="value gradient-gold">{actual}<span class="unit">días</span></div>
+		<p class="msg">{msg}</p>
+	</div>
+	<div class="streak-card best">
+		<header><span class="trophy" aria-hidden="true">🏆</span><span class="title">MEJOR RACHA</span></header>
+		<div class="value gradient-violet">{best}<span class="unit">días</span></div>
+		<p class="msg">¡Tu récord!</p>
+	</div>
 </div>
 
 <style>
-.streak-card {
-background-color: var(--color-surface);
-border-radius: 1rem;
-padding: 1.5rem;
-box-shadow: var(--shadow-md);
-}
-
-.streak-header {
-margin-bottom: 1.5rem;
-}
-
-.streak-header h3 {
-margin: 0;
-font-size: 1.1rem;
-}
-
-.streak-content {
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 1rem;
-}
-
-.streak-number {
-font-size: 4rem;
-font-weight: 700;
-transition: color 0.3s ease;
-}
-
-.streak-label {
-color: var(--color-text-secondary);
-font-size: 0.875rem;
-margin: 0;
-}
-
-.streak-message {
-background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
--webkit-background-clip: text;
--webkit-text-fill-color: transparent;
-background-clip: text;
-font-weight: 700;
-font-size: 1rem;
-}
-
-.streak-milestones {
-display: flex;
-gap: 1rem;
-width: 100%;
-justify-content: space-around;
-margin-top: 1rem;
-padding-top: 1rem;
-border-top: 1px solid var(--color-surface-hover);
-}
-
-.milestone {
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 0.25rem;
-opacity: 0.3;
-transition: all 0.3s ease;
-}
-
-.milestone.active {
-opacity: 1;
-transform: scale(1.1);
-}
-
-.milestone-icon {
-font-size: 1.5rem;
-filter: grayscale(1);
-transition: filter 0.3s ease;
-}
-
-.milestone.active .milestone-icon {
-filter: grayscale(0);
-}
-
-.milestone-label {
-font-size: 0.625rem;
-color: var(--color-text-secondary);
-font-weight: 600;
-}
-
-@media (max-width: 768px) {
-.streak-number {
-font-size: 3rem;
-}
-
-.streak-milestones {
-gap: 0.5rem;
-}
-
-.milestone-icon {
-font-size: 1.25rem;
-}
-
-.milestone-label {
-font-size: 0.5rem;
-}
-}
+	.streak-row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.75rem;
+	}
+	.streak-card {
+		background: linear-gradient(180deg, #1f1747, #15102e);
+		border: 1px solid var(--border);
+		border-radius: 18px;
+		padding: 0.95rem 1rem 1rem;
+	}
+	header {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-bottom: 0.4rem;
+	}
+	.ember { font-size: 1rem; animation: ember-flicker 1.6s ease-in-out infinite; }
+	.trophy { font-size: 1rem; }
+	.title {
+		font-size: 0.65rem;
+		letter-spacing: 0.14em;
+		font-weight: 700;
+		color: var(--text-3);
+	}
+	.value {
+		font-family: 'Cinzel', serif;
+		font-size: 1.7rem;
+		font-weight: 800;
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.35rem;
+	}
+	.unit {
+		font-size: 0.78rem;
+		font-weight: 700;
+		color: var(--text-2);
+		-webkit-text-fill-color: var(--text-2);
+	}
+	.msg {
+		font-size: 0.72rem;
+		color: var(--text-3);
+		margin-top: 0.2rem;
+	}
 </style>

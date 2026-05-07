@@ -1,188 +1,111 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-
 	export let usuario: any = null;
 	export let currentPage: string = 'dashboard';
 
 	const dispatch = createEventDispatcher();
-
-	function navigateTo(page: string) {
-		dispatch('navigate', page);
-	}
-
-	function handleLogout() {
-		dispatch('logout');
+	const tabs = [
+		{ id: 'dashboard', label: 'Inicio' },
+		{ id: 'actividades', label: 'Actividades' },
+		{ id: 'estadisticas', label: 'Stats' },
+		{ id: 'hitos', label: 'Logros' },
+		{ id: 'perfil', label: 'Perfil' }
+	];
+	function go(id: string) {
+		if (id === 'estadisticas') id = 'dashboard';
+		dispatch('navigate', id);
 	}
 </script>
 
-<nav class="navbar">
-	<div class="navbar-content">
-		<div class="navbar-brand">
-			<span class="logo">🎯</span>
-			<span class="app-name">LevelUp Life</span>
-		</div>
-
-		<div class="navbar-menu">
-			<button 
-				class="nav-btn" 
-				class:active={currentPage === 'dashboard'}
-				on:click={() => navigateTo('dashboard')}
-			>
-				Dashboard
+<nav class="bottom-nav" aria-label="Navegación principal">
+	<div class="nav-inner">
+		{#each tabs as tab}
+			{@const active = currentPage === tab.id || (tab.id === 'estadisticas' && currentPage === 'estadisticas')}
+			<button class="nav-btn" class:active on:click={() => go(tab.id)}>
+				<span class="nav-icon" aria-hidden="true">
+					{#if tab.id === 'dashboard'}
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11.5L12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" stroke-linejoin="round"/></svg>
+					{:else if tab.id === 'actividades'}
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h2l2-6 4 12 2-8 2 4h2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+					{:else if tab.id === 'estadisticas'}
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke-linecap="round"/></svg>
+					{:else if tab.id === 'hitos'}
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 4h8v5a4 4 0 0 1-8 0zM5 5h3v3a3 3 0 0 1-3-3zM19 5h-3v3a3 3 0 0 0 3-3zM10 14h4v3h2v3H8v-3h2z" stroke-linejoin="round"/></svg>
+					{:else}
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke-linecap="round"/></svg>
+					{/if}
+				</span>
+				<span class="nav-label">{tab.label}</span>
+				{#if active}<span class="nav-indicator"></span>{/if}
 			</button>
-			<button 
-				class="nav-btn" 
-				class:active={currentPage === 'actividades'}
-				on:click={() => navigateTo('actividades')}
-			>
-				Actividades
-			</button>
-			<button 
-				class="nav-btn" 
-				class:active={currentPage === 'hitos'}
-				on:click={() => navigateTo('hitos')}
-			>
-				Hitos
-			</button>
-			<button 
-				class="nav-btn" 
-				class:active={currentPage === 'perfil'}
-				on:click={() => navigateTo('perfil')}
-			>
-				Perfil
-			</button>
-		</div>
-
-		<div class="navbar-user">
-			{#if usuario}
-				<span class="user-name">{usuario.nombre}</span>
-				<span class="user-level">Nivel {usuario.nivel}</span>
-			{/if}
-			<button class="btn-logout" on:click={handleLogout}>
-				Salir
-			</button>
-		</div>
+		{/each}
 	</div>
 </nav>
 
 <style>
-	.navbar {
-		background-color: var(--color-surface);
-		border-bottom: 1px solid var(--color-surface-hover);
-		padding: 0.75rem 1.5rem;
-		position: sticky;
-		top: 0;
-		z-index: 100;
-		box-shadow: var(--shadow-md);
+	.bottom-nav {
+		position: fixed;
+		left: 50%;
+		transform: translateX(-50%);
+		bottom: 0;
+		width: 100%;
+		max-width: var(--app-max);
+		z-index: 50;
+		padding: 8px 10px 14px;
+		background: linear-gradient(180deg, rgba(13, 10, 31, 0) 0%, rgba(7, 6, 15, 0.95) 35%);
+		pointer-events: none;
 	}
-
-	.navbar-content {
-		max-width: 1400px;
-		margin: 0 auto;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 2rem;
+	.nav-inner {
+		pointer-events: auto;
+		display: grid;
+		grid-template-columns: repeat(5, 1fr);
+		background: rgba(21, 16, 46, 0.92);
+		backdrop-filter: blur(16px);
+		border: 1px solid var(--border);
+		border-radius: 22px;
+		padding: 8px;
+		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(168, 134, 255, 0.05) inset;
 	}
-
-	.navbar-brand {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.logo {
-		font-size: 1.5rem;
-	}
-
-	.app-name {
-		font-size: 1.25rem;
-		font-weight: 700;
-		background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-	}
-
-	.navbar-menu {
-		display: flex;
-		gap: 0.5rem;
-	}
-
 	.nav-btn {
-		padding: 0.5rem 1rem;
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+		padding: 8px 4px;
 		background: transparent;
 		border: none;
-		color: var(--color-text-secondary);
-		font-size: 0.875rem;
+		color: var(--text-3);
+		font-family: inherit;
+		font-size: 0.68rem;
 		font-weight: 600;
-		border-radius: 0.5rem;
 		cursor: pointer;
+		border-radius: 14px;
 		transition: var(--transition);
 	}
-
-	.nav-btn:hover {
-		background-color: var(--color-surface-hover);
-		color: var(--color-text);
+	.nav-icon {
+		width: 22px;
+		height: 22px;
+		display: grid;
+		place-items: center;
 	}
-
+	.nav-icon :global(svg) { width: 22px; height: 22px; }
 	.nav-btn.active {
-		background-color: var(--color-primary);
-		color: white;
+		color: var(--gold);
 	}
-
-	.navbar-user {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
+	.nav-btn.active .nav-icon {
+		filter: drop-shadow(0 0 8px rgba(244, 197, 66, 0.6));
 	}
-
-	.user-name {
-		font-weight: 600;
-		color: var(--color-text);
+	.nav-indicator {
+		position: absolute;
+		top: 2px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 24px;
+		height: 3px;
+		border-radius: 999px;
+		background: linear-gradient(90deg, var(--gold), var(--ember));
+		box-shadow: 0 0 10px rgba(244, 197, 66, 0.7);
 	}
-
-	.user-level {
-		font-size: 0.75rem;
-		background-color: rgba(99, 102, 241, 0.2);
-		color: var(--color-primary);
-		padding: 0.25rem 0.75rem;
-		border-radius: 1rem;
-		font-weight: 700;
-	}
-
-	.btn-logout {
-		padding: 0.5rem 1rem;
-		background-color: rgba(239, 68, 68, 0.1);
-		border: 1px solid var(--color-error);
-		color: var(--color-error);
-		font-size: 0.875rem;
-		font-weight: 600;
-		border-radius: 0.5rem;
-		cursor: pointer;
-		transition: var(--transition);
-	}
-
-	.btn-logout:hover {
-		background-color: var(--color-error);
-		color: white;
-	}
-
-	@media (max-width: 768px) {
-		.navbar-content {
-			flex-wrap: wrap;
-			gap: 1rem;
-		}
-
-		.navbar-menu {
-			order: 3;
-			width: 100%;
-			justify-content: center;
-		}
-
-		.nav-btn {
-			padding: 0.5rem 0.75rem;
-			font-size: 0.75rem;
-		}
-	}
+	.nav-label { letter-spacing: 0.02em; }
 </style>

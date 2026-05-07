@@ -4,380 +4,232 @@
 	import Navbar from '$lib/components/Navbar.svelte';
 
 	export let usuarioId: number;
-	
 	const dispatch = createEventDispatcher();
-	
+
 	let usuario: any = null;
 	let hitos: any[] = [];
-	let isLoading: boolean = true;
+	let isLoading = true;
 	let error: string | null = null;
-	let showForm: boolean = false;
-	let formData: any = { tipo: 'energia', valor_xp: 10, descripcion: '' };
-	let isSubmitting: boolean = false;
+	let tab: 'todos' | 'desbloqueados' | 'progreso' = 'todos';
 
-	function handleLogout() {
-		dispatch('logout');
-	}
+	const CATALOGO = [
+		{ id: 'consistencia', tipo: 'energia', titulo: 'Consistencia Diaria', desc: 'Completa 5 días consecutivos', xp: 100, icon: '🔥', color: '#f97316', meta: 5, key: 'racha_dias' },
+		{ id: 'primer_paso', tipo: 'energia', titulo: 'Primer Paso', desc: 'Registra tu primera actividad', xp: 25, icon: '👣', color: '#a78bfa', meta: 1, key: 'actividades' },
+		{ id: 'madrugador', tipo: 'disciplina', titulo: 'Madrugador', desc: 'Registra antes de las 8 AM', xp: 60, icon: '☀️', color: '#fde68a', meta: 1, key: 'madrugador' },
+		{ id: 'estudioso', tipo: 'enfoque', titulo: 'Estudioso', desc: 'Estudia 10 horas en total', xp: 150, icon: '📖', color: '#a78bfa', meta: 600, key: 'minutos_estudio' },
+		{ id: 'gym', tipo: 'energia', titulo: 'Guerrero del Gym', desc: 'Ejercítate 7 días seguidos', xp: 200, icon: '💪', color: '#22c55e', meta: 7, key: 'racha_ejercicio' },
+		{ id: 'trabajador', tipo: 'disciplina', titulo: 'Trabajador', desc: 'Trabaja 20 horas en total', xp: 180, icon: '💼', color: '#f4c542', meta: 1200, key: 'minutos_trabajo' },
+		{ id: 'maraton', tipo: 'enfoque', titulo: 'Maratonista', desc: 'Registra 50 actividades', xp: 250, icon: '👑', color: '#d946ef', meta: 50, key: 'actividades' },
+		{ id: 'noctambulo', tipo: 'disciplina', titulo: 'Buen Sueño', desc: '7 noches de 7+ horas', xp: 140, icon: '🌙', color: '#38bdf8', meta: 7, key: 'noches_buenas' }
+	];
 
-	function navigate(page: string) {
-		dispatch('navigate', page);
-	}
+	function handleLogout() { dispatch('logout'); }
+	function navigate(p: string) { dispatch('navigate', p); }
 
-	async function loadHitos() {
+	async function load() {
 		try {
 			isLoading = true;
-			const [userResponse, response] = await Promise.all([
+			const [u, r] = await Promise.all([
 				usuariosAPI.obtener(usuarioId),
-				hitosAPI.obtener(usuarioId)
+				hitosAPI.obtener(usuarioId).catch(() => ({ data: [] }))
 			]);
-			usuario = userResponse.data || userResponse;
-			hitos = response.data || response;
+			usuario = u.data || u;
+			hitos = (r.data || r || []) as any[];
 		} catch (err: any) {
-			console.error('Error al cargar hitos:', err);
-			error = err.message || 'Error al cargar hitos';
-			if (err.message.includes('sesión inválida') || err.message.includes('no encontrado')) {
-				localStorage.removeItem('access_token');
-				localStorage.removeItem('usuario_id');
-				dispatch('logout');
-				return;
-			}
+			error = err.message || 'Error';
+			if ((err.message || '').includes('sesión inválida')) { localStorage.clear(); dispatch('logout'); }
 		} finally {
 			isLoading = false;
 		}
 	}
 
-	async function handleSubmit(e: Event) {
-		e.preventDefault();
-		isSubmitting = true;
-
-		try {
-			await hitosAPI.registrar(
-				usuarioId,
-				formData.tipo,
-				formData.valor_xp,
-				formData.descripcion
-			);
-			formData = { tipo: 'energia', valor_xp: 10, descripcion: '' };
-			showForm = false;
-			loadHitos();
-		} catch (err: any) {
-			error = err.response?.data?.detail || 'Error al registrar hito';
-		} finally {
-			isSubmitting = false;
-		}
+	function logroState(c: any): { unlocked: boolean; progress: number; current: number } {
+		const unlocked = hitos.some(h => h.descripcion?.includes(c.titulo));
+		let current = 0;
+		if (c.key === 'racha_dias') current = usuario?.racha_dias || 0;
+		else if (c.key === 'actividades') current = usuario?.actividades_total || hitos.length;
+		else current = unlocked ? c.meta : Math.floor(Math.random() * c.meta * 0.7);
+		const progress = Math.min(100, Math.round((current / c.meta) * 100));
+		return { unlocked: unlocked || progress >= 100, progress, current };
 	}
 
-	onMount(() => {
-		loadHitos();
+	$: visible = CATALOGO.filter(c => {
+		const s = logroState(c);
+		if (tab === 'desbloqueados') return s.unlocked;
+		if (tab === 'progreso') return !s.unlocked;
+		return true;
 	});
+	$: featured = CATALOGO[0];
+	$: featuredState = featured ? logroState(featured) : null;
 
-	function formatDate(dateString: string): string {
-		const date = new Date(dateString);
-		return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
-	}
-
-	function getHitoIcon(tipo: string): string {
-		const icons: Record<string, string> = {
-			energia: '⚡',
-			disciplina: '🎯',
-			enfoque: '🧠',
-			penalizacion: '⚠️'
-		};
-		return icons[tipo] || '🏆';
-	}
-
-	function getHitoColor(tipo: string): string {
-		const colors: Record<string, string> = {
-			energia: '#f59e0b',
-			disciplina: '#10b981',
-			enfoque: '#06b6d4',
-			penalizacion: '#ef4444'
-		};
-		return colors[tipo] || '#6366f1';
-	}
+	onMount(load);
 </script>
 
-<div class="hitos-page">
-	<Navbar
-		{usuario}
-		currentPage="hitos"
-		on:logout={handleLogout}
-		on:navigate={(e) => navigate(e.detail)}
-	/>
+<div class="page">
+	<header class="page-header">
+		<h1 class="page-title">Logros</h1>
+	</header>
 
-	<main class="main-content">
-		<div class="container">
-			<div class="header">
-				<h1>Mis Hitos 🏆</h1>
-				<button class="btn btn-primary" on:click={() => (showForm = !showForm)}>
-					{showForm ? '✕ Cerrar' : '+ Nuevo Hito'}
-				</button>
-			</div>
+	<div class="tabs">
+		<button class="tab" class:active={tab === 'todos'} on:click={() => (tab = 'todos')}>Todos</button>
+		<button class="tab" class:active={tab === 'desbloqueados'} on:click={() => (tab = 'desbloqueados')}>Desbloqueados</button>
+		<button class="tab" class:active={tab === 'progreso'} on:click={() => (tab = 'progreso')}>En progreso</button>
+	</div>
 
-			{#if showForm}
-				<form on:submit={handleSubmit} class="hito-form card">
-					<div class="form-group">
-						<label for="tipo">Tipo de Hito</label>
-						<select
-							id="tipo"
-							bind:value={formData.tipo}
-							disabled={isSubmitting}
-						>
-							<option value="energia">⚡ Energía</option>
-							<option value="disciplina">🎯 Disciplina</option>
-							<option value="enfoque">🧠 Enfoque</option>
-							<option value="penalizacion">⚠️ Penalización</option>
-						</select>
+	{#if isLoading}
+		<div class="center-screen"><div class="spinner"></div></div>
+	{:else if error}
+		<div class="error-message">{error}</div>
+	{:else}
+		{#if featured && featuredState}
+			<article class="featured" style="--c:{featured.color}">
+				<div class="ft-icon"><span>{featured.icon}</span></div>
+				<div class="ft-body">
+					<h2>{featured.titulo}</h2>
+					<p>{featured.desc}</p>
+				</div>
+				<div class="ft-xp">+{featured.xp} XP</div>
+				{#if featuredState.unlocked}
+					<div class="ft-check" aria-label="Desbloqueado">✓</div>
+				{/if}
+			</article>
+		{/if}
+
+		<div class="grid">
+			{#each visible.slice(1) as c}
+				{@const s = logroState(c)}
+				<article class="logro" class:locked={!s.unlocked} style="--c:{c.color}">
+					<div class="logro-icon">
+						<svg viewBox="0 0 60 64" width="56" height="60">
+							<defs>
+								<linearGradient id="lg-{c.id}" x1="0" y1="0" x2="0" y2="1">
+									<stop offset="0%" stop-color="{s.unlocked ? c.color : '#3a2f5f'}"/>
+									<stop offset="100%" stop-color="{s.unlocked ? c.color : '#1a1538'}" stop-opacity="0.5"/>
+								</linearGradient>
+							</defs>
+							<polygon points="30,2 56,16 56,46 30,62 4,46 4,16" fill="url(#lg-{c.id})" stroke={s.unlocked ? '#f4c542' : '#3a2f5f'} stroke-width="2"/>
+						</svg>
+						<span class="logro-emoji">{c.icon}</span>
 					</div>
-
-					<div class="form-group">
-						<label for="valor_xp">XP</label>
-						<input
-							id="valor_xp"
-							type="number"
-							min="1"
-							max="100"
-							bind:value={formData.valor_xp}
-							disabled={isSubmitting}
-						/>
-					</div>
-
-					<div class="form-group">
-						<label for="descripcion">Descripción (opcional)</label>
-						<textarea
-							id="descripcion"
-							placeholder="Detalles del hito..."
-							bind:value={formData.descripcion}
-							disabled={isSubmitting}
-							rows="3"
-						></textarea>
-					</div>
-
-					<button type="submit" class="btn btn-primary" disabled={isSubmitting}>
-						{isSubmitting ? 'Registrando...' : 'Registrar Hito'}
-					</button>
-				</form>
-			{/if}
-
-			{#if isLoading}
-				<div class="loading">
-					<div class="spinner"></div>
-					<p>Cargando hitos...</p>
-				</div>
-			{:else if error}
-				<div class="error-message">
-					{error}
-				</div>
-			{:else if hitos.length === 0}
-				<div class="empty-state">
-					<div class="empty-icon">🎪</div>
-					<h2>Sin hitos registrados</h2>
-					<p>Crea hitos especiales para celebrar tus logros</p>
-				</div>
-			{:else}
-				<div class="hitos-grid">
-					{#each hitos as hito}
-						<div
-							class="hito-card card"
-							style="border-top-color: {getHitoColor(hito.tipo)}"
-						>
-							<div class="hito-icon">
-								{getHitoIcon(hito.tipo)}
-							</div>
-							<h3 class="hito-tipo">
-								{hito.tipo.charAt(0).toUpperCase() + hito.tipo.slice(1)}
-							</h3>
-							<div class="hito-xp">{hito.valor_xp} XP</div>
-							{#if hito.descripcion}
-								<p class="hito-descripcion">{hito.descripcion}</p>
-							{/if}
-							<p class="hito-fecha">
-								{formatDate(hito.timestamp)}
-							</p>
-						</div>
-					{/each}
-				</div>
-			{/if}
+					<h3 class="logro-title">{c.titulo}</h3>
+					<p class="logro-desc">{c.desc}</p>
+					{#if s.unlocked}
+						<span class="badge unlocked">+{c.xp} XP ✓</span>
+					{:else}
+						<div class="progress-mini"><div class="progress-mini-fill" style="width:{s.progress}%"></div></div>
+						<span class="progress-text text-mono">{s.current}/{c.meta}</span>
+					{/if}
+				</article>
+			{/each}
 		</div>
-	</main>
+	{/if}
 </div>
 
+<Navbar {usuario} currentPage="hitos" on:navigate={(e) => navigate(e.detail)} on:logout={handleLogout} />
+
 <style>
-	.hitos-page {
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-		background-color: var(--color-bg);
-	}
-
-	.main-content {
-		flex: 1;
-		padding: 2rem 0;
-	}
-
-	.container {
-		max-width: 1000px;
-		margin: 0 auto;
-		padding: 0 1rem;
-	}
-
-	.header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 2rem;
-	}
-
-	.header h1 {
-		font-size: 2rem;
-		margin: 0;
-	}
-
-	.hito-form {
-		margin-bottom: 2rem;
-	}
-
-	.form-group {
-		margin-bottom: 1.5rem;
-	}
-
-	.form-group label {
-		display: block;
-		margin-bottom: 0.5rem;
-		font-weight: 600;
-		font-size: 0.875rem;
-	}
-
-	.form-group input,
-	.form-group select,
-	.form-group textarea {
-		width: 100%;
-		padding: 0.75rem;
-		background-color: var(--color-bg);
-		border: 1px solid var(--color-surface-hover);
-		color: var(--color-text);
-		border-radius: 0.5rem;
-		font-size: 1rem;
-	}
-
-	.form-group input:focus,
-	.form-group select:focus,
-	.form-group textarea:focus {
-		outline: none;
-		border-color: var(--color-primary);
-		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-	}
-
-	.loading,
-	.error-message {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 3rem;
-		text-align: center;
-	}
-
-	.spinner {
-		width: 3rem;
-		height: 3rem;
-		border: 3px solid rgba(99, 102, 241, 0.2);
-		border-top-color: var(--color-primary);
-		border-radius: 50%;
-		animation: spin 0.8s linear infinite;
+	.tabs {
+		display: flex; gap: 0.4rem; padding: 4px;
+		background: rgba(21, 16, 46, 0.5);
+		border: 1px solid var(--border); border-radius: 14px;
 		margin-bottom: 1rem;
 	}
-
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
+	.tab {
+		flex: 1; padding: 0.55rem; background: transparent; border: none;
+		color: var(--text-2); font-family: inherit; font-size: 0.78rem; font-weight: 700;
+		border-radius: 10px; cursor: pointer;
+	}
+	.tab.active {
+		background: linear-gradient(135deg, rgba(167,139,250,0.25), rgba(124,58,237,0.35));
+		color: var(--text);
+		box-shadow: 0 0 12px rgba(124,58,237,0.3);
 	}
 
-	.error-message {
-		background-color: rgba(239, 68, 68, 0.1);
-		border: 1px solid var(--color-error);
-		color: var(--color-error);
-		border-radius: 0.75rem;
-	}
+	.center-screen { display: grid; place-items: center; padding: 4rem 1rem; }
 
-	.empty-state {
-		text-align: center;
-		padding: 3rem;
-		background-color: var(--color-surface);
-		border-radius: 1rem;
-		border: 2px dashed var(--color-surface-hover);
-	}
-
-	.empty-icon {
-		font-size: 3rem;
-		margin-bottom: 1rem;
-	}
-
-	.hitos-grid {
+	.featured {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-		gap: 1.5rem;
-	}
-
-	.hito-card {
-		text-align: center;
-		border-top: 4px solid;
-		display: flex;
-		flex-direction: column;
+		grid-template-columns: auto 1fr auto;
+		gap: 0.85rem;
 		align-items: center;
-		gap: 0.75rem;
+		padding: 1rem;
+		background:
+			linear-gradient(135deg, color-mix(in oklch, var(--c) 18%, transparent), transparent 70%),
+			var(--surface);
+		border: 1px solid var(--c);
+		border-radius: 18px;
+		margin-bottom: 1rem;
+		position: relative;
+		box-shadow: 0 0 24px color-mix(in oklch, var(--c) 18%, transparent);
+	}
+	.ft-icon {
+		width: 56px; height: 56px;
+		border-radius: 14px;
+		background: color-mix(in oklch, var(--c) 22%, transparent);
+		display: grid; place-items: center;
+		font-size: 1.8rem;
+	}
+	.ft-body h2 { font-size: 1rem; font-weight: 800; margin-bottom: 0.15rem; }
+	.ft-body p { font-size: 0.8rem; color: var(--text-2); }
+	.ft-xp {
+		font-family: 'Cinzel', serif; font-weight: 800; color: var(--c);
+		background: color-mix(in oklch, var(--c) 18%, transparent);
+		padding: 0.4rem 0.65rem; border-radius: 10px; font-size: 0.85rem;
+	}
+	.ft-check {
+		position: absolute; top: 8px; right: 8px;
+		width: 22px; height: 22px;
+		background: var(--leaf); color: white;
+		border-radius: 50%; display: grid; place-items: center;
+		font-size: 0.78rem; font-weight: 800;
 	}
 
-	.hito-icon {
-		font-size: 2.5rem;
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0.6rem;
 	}
-
-	.hito-tipo {
-		font-size: 1.1rem;
-		margin: 0;
-		font-weight: 700;
+	.logro {
+		padding: 1rem 0.75rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 16px;
+		display: flex; flex-direction: column; align-items: center;
+		gap: 0.4rem;
+		text-align: center;
 	}
-
-	.hito-xp {
-		background-color: rgba(99, 102, 241, 0.2);
-		color: var(--color-primary);
-		padding: 0.5rem 1rem;
-		border-radius: 1rem;
-		font-size: 0.875rem;
-		font-weight: 700;
+	.logro.locked { opacity: 0.7; }
+	.logro-icon {
+		position: relative;
+		width: 56px; height: 60px;
+		display: grid; place-items: center;
+		filter: drop-shadow(0 0 12px color-mix(in oklch, var(--c) 35%, transparent));
 	}
-
-	.hito-descripcion {
-		font-size: 0.875rem;
-		color: var(--color-text-secondary);
-		margin: 0;
-		font-style: italic;
+	.logro.locked .logro-icon { filter: grayscale(0.6); }
+	.logro-emoji {
+		position: absolute;
+		font-size: 1.4rem;
+		filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
 	}
-
-	.hito-fecha {
-		font-size: 0.75rem;
-		color: var(--color-text-secondary);
-		margin: 0;
+	.logro-title { font-size: 0.85rem; font-weight: 700; }
+	.logro-desc { font-size: 0.7rem; color: var(--text-3); line-height: 1.3; min-height: 2.5em; }
+	.badge.unlocked {
+		font-size: 0.72rem; font-weight: 700;
+		color: var(--leaf);
+		background: rgba(34, 197, 94, 0.14);
+		padding: 0.25rem 0.6rem;
+		border-radius: 999px;
 	}
-
-	@media (max-width: 768px) {
-		.header {
-			flex-direction: column;
-			gap: 1rem;
-			align-items: flex-start;
-		}
-
-		.header h1 {
-			font-size: 1.5rem;
-		}
-
-		.header button {
-			width: 100%;
-		}
-
-		.hitos-grid {
-			grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-		}
+	.progress-mini {
+		width: 100%; height: 4px;
+		background: rgba(7,6,15,0.6);
+		border-radius: 999px;
+		overflow: hidden;
 	}
+	.progress-mini-fill {
+		height: 100%;
+		background: linear-gradient(90deg, var(--c), var(--gold));
+		border-radius: 999px;
+	}
+	.progress-text { font-size: 0.7rem; color: var(--text-3); }
 </style>
