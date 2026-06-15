@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Cinzel+Decorative:wght@400;700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Background */
+  --bg-900: #04050f;
+  --bg-800: #07061a;
+  --bg-700: #0d0c24;
+  --bg-600: #11122a;
+  --bg-500: #14152e;
+
+  /* Borders */
+  --border: rgba(168, 132, 251, 0.15);
+  --border-strong: rgba(168, 132, 251, 0.30);
+
+  /* Text */
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --text-mute: #475569;
+
+  /* Brand */
+  --gold: #fbbf24;
+  --gold-light: #fde68a;
+  --purple: #7c3aed;
+  --purple-soft: #a855f7;
+  --green: #34d399;
+  --orange: #fb923c;
+  --blue: #60a5fa;
+  --pink: #f472b6;
+  --red: #ef4444;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-800);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

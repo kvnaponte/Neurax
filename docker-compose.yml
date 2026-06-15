@@ -1,29 +1,38 @@
-version: '3.8'
+version: '3.9'
 
 services:
-# Servicio de la base de datos
-  db:
-    image: postgres:17
-    container_name: postgres_imbatible
-    restart: always
+  postgres:
+    image: postgres:16-alpine
+    container_name: neurax_postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: kevin_admin
-      POSTGRES_PASSWORD: admin12345
-      POSTGRES_DB: sistema_imbatible_db # Corregido: guion bajo y coincide con el backend
+      POSTGRES_USER: neurax_admin
+      POSTGRES_PASSWORD: neurax_dev_password
+      POSTGRES_DB: neurax_db
     ports:
       - "5432:5432"
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neurax_admin -d neurax_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-# Servicio del Backend (FastAPI)
-  backend:
-    build: .
-    container_name: fastapi_imbatible
-    restart: always # Es buena práctica agregarlo también aquí
+  redis:
+    image: redis:7-alpine
+    container_name: neurax_redis
+    restart: unless-stopped
     ports:
-      - "1104:1104"
-    environment:
-      # Corregido: contraseña coincide con 'db' y nombre de BD corregido
-      DATABASE_URL: postgresql://kevin_admin:admin12345@db:5432/sistema_imbatible_db
-    depends_on:
-      - db
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
