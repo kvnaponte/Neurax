@@ -53,9 +53,17 @@ Demeter gestiona las finanzas personales del usuario: ingresos, egresos, inversi
 Los porcentajes son **sugerencias** — el usuario los define a su gusto. Deben sumar 100%.
 
 ### Fondos Especiales (dentro de Entretenimiento)
-- **Fondo de Experiencias (Soberbio)**: presupuesto dedicado a visitar restaurantes
-- **Fondo Kubera**: ahorro hacia productos deseados en Kubera
-- Ambos se configuran con un monto objetivo mensual y se llenan automáticamente desde el % de Entretenimiento
+Todos los fondos especiales se configuran con un monto objetivo y se llenan automáticamente desde el % de Entretenimiento del mes:
+
+| Fondo | Sección | Propósito |
+|-------|---------|-----------|
+| **Fondo Soberbio** | Soberbio | Presupuesto para visitar restaurantes y experiencias gastronómicas |
+| **Fondo Michelin** | Michelin | Presupuesto para ingredientes de recetas por cocinar |
+| **Fondo Odysseia** | Odysseia | Presupuesto para viajes y turismo |
+| **Fondo Némesis** | Némesis | Presupuesto para compra de videojuegos o membresías de gaming |
+| **Fondo Kubera** | Kubera | Ahorro hacia productos deseados en la lista de deseos |
+
+Cuando un fondo alcanza su objetivo, el sistema dispara el flujo correspondiente: sugiere una receta (Michelin), propone fechas para el viaje (Odysseia × Cronnos), notifica que puede comprar el juego (Némesis), etc.
 
 ---
 
@@ -85,16 +93,25 @@ Los porcentajes son **sugerencias** — el usuario los define a su gusto. Deben 
 
 ## Configuración del Presupuesto Mensual
 
-Al inicio de cada mes (o la primera vez):
-1. El sistema pregunta el **ingreso esperado del mes**
-2. El usuario define los **porcentajes por categoría** (con sugerencias pre-cargadas)
-3. El sistema calcula los montos absolutos: `monto = ingreso × porcentaje`
-4. El usuario puede ajustar los montos absolutos directamente (recalcula los porcentajes)
+### Primera vez
+La **primera vez que el usuario entra a la sección Demeter**, el sistema muestra un wizard de configuración:
+1. Pregunta los **gastos fijos mensuales** (arriendo, servicios, suscripciones, deudas fijas)
+2. Pregunta el **ingreso esperado del mes**
+3. El sistema calcula automáticamente cuánto queda libre: `disponible = ingreso - gastos_fijos`
+4. El usuario define los **porcentajes de las categorías variables** sobre el disponible (con sugerencias pre-cargadas)
+5. El sistema calcula los montos absolutos: `monto = disponible × porcentaje`
+
+El wizard **no vuelve a aparecer automáticamente**. El presupuesto configurado se replica mes a mes.
+
+### Re-distribución de Gastos
+El botón **"Re-distribuir gastos"** (visible en la pantalla principal de Demeter) permite volver a ejecutar el wizard completo:
+- Útil si los gastos fijos cambian (nuevo arriendo, nueva suscripción, etc.)
+- Aplica desde el mes actual en adelante
+- El historial de meses anteriores no se modifica
 
 ### Gestión Multi-mes
-- El presupuesto se puede configurar para replicarse automáticamente mes a mes
-- El usuario puede modificar cualquier mes específico
-- El sistema guarda el historial de presupuestos anteriores
+- El usuario puede modificar cualquier mes específico sin afectar los demás
+- El sistema guarda el historial de presupuestos anteriores para comparativas
 
 ---
 
@@ -112,10 +129,11 @@ Al inicio de cada mes (o la primera vez):
 
 ## Gestión vía IA
 
-El agente IA (Claude) puede interactuar con Demeter vía API Key:
-- Registrar ingresos y egresos enviados por el usuario en chat
+El agente IA (via CLI, ver spec 02-tech-stack — Estrategia CLI) puede interactuar con Demeter a través de endpoints internos del sistema:
+- Registrar ingresos y egresos enviados por el usuario en lenguaje natural
 - Consultar el estado del presupuesto
 - Generar reportes de gasto
+- Los archivos de memoria del usuario incluyen contexto financiero para mejorar las respuestas con el tiempo
 
 Ejemplos de comandos del usuario al agente:
 - "Gasté 50.000 en el supermercado hoy" → registra egreso en Gastos Personales
@@ -187,7 +205,11 @@ CREATE TABLE demeter_presupuestos (
   -- }
   
   fondos_especiales JSONB DEFAULT '{}',
-  -- {"soberbio": {"objetivo": 200000, "acumulado": 120000}, "kubera": {...}}
+  -- {"soberbio": {"objetivo": 200000, "acumulado": 120000},
+  --  "michelin": {"objetivo": 80000, "acumulado": 40000},
+  --  "odysseia": {"objetivo": 500000, "acumulado": 200000},
+  --  "nemesis": {"objetivo": 150000, "acumulado": 90000},
+  --  "kubera": {"objetivo": 300000, "acumulado": 300000}}
   
   UNIQUE(usuario_id, año, mes),
   created_at TIMESTAMPTZ DEFAULT NOW(),

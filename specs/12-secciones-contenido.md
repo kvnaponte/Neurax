@@ -5,37 +5,61 @@
 ### Propósito
 Gestionar el historial de películas vistas, las pendientes por ver y las calificaciones cinematográficas.
 
+### Estética
+Apolo tiene una ambientación de **cine antiguo / cine clásico**: tipografía serif dorada sobre fondos oscuros con textura de película, bordes con efecto de fotograma de celuloide, partículas de polvo animadas, y transiciones con efecto de proyector antiguo (fundido en negro con parpadeo). El objetivo es evocar la magia del cine de sala de los años 40-60.
+
 ### Pantalla Principal
-- Header: "APOLO" + filtro Por Ver / Vistas / Todas
+- Header: "APOLO" en estilo marquesina de cine + filtro Por Ver / Vistas / Todas
 - **Top 5**: Las 5 películas con mejor calificación en card horizontal con poster
 - **Pendientes**: Lista de películas por ver
 - **Recientes**: Películas calificadas recientemente
+- **Nivel del usuario**: badge con nivel cinéfilo actual (ver Sistema de Niveles de Usuario abajo)
 
 ### Registro de Película
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| Título | Texto | Nombre de la película |
-| Año | Número | Año de estreno |
-| Director | Texto | Opcional |
-| Plataforma | Selector | Netflix/HBO/Cine/Otro |
-| Estado | Enum | Pendiente / Vista / En progreso |
-| Fecha de visualización | Date | Cuando la vio |
-| Poster | URL/Imagen | Manual o desde TMDB API (future) |
+| Campo | Nombre | Descripción |
+|-------|--------|-------------|
+| Year | Año | Año de estreno |
+| Movie | Película | Título de la película |
+| Director | Director | Director principal |
+| Country | País | País de origen |
+| Producer | Productor | Productora o productor principal |
+| Distributed | Distribuidora | Empresa distribuidora |
+| Genre | Género | Género cinematográfico |
+| Rating | Calificación | Puntuación del usuario (0.0–5.0) — ingresada manualmente |
+| Stars | Estrellas | Calculado: visualización en estrellas basada en Rating |
+| Category | Categoría | Calculado: categoría de calidad basada en Rating |
 
 ### Sistema de Calificación (solo si estado = Vista)
-Criterios (puntuación 1-10 cada uno):
-| Criterio | Descripción |
-|----------|-------------|
-| Guión | Calidad de la historia, diálogos, estructura |
-| Actuación | Desempeño del elenco |
-| Dirección | Visión del director, toma de decisiones creativas |
-| Fotografía | Cinematografía, paleta visual |
-| Música | Soundtrack y diseño de sonido |
-| Efectos | Efectos visuales y práctica |
 
-- **Calificación final**: promedio ponderado de los 6 criterios
-- Se muestra como score / 10 con una estrella visual
-- Top 5 se ordena por calificación final descendente
+El usuario ingresa un **Rating** numérico (0.0 a 5.0). El sistema calcula automáticamente Stars y Category:
+
+| Rating | Stars | Category |
+|--------|-------|----------|
+| 4.5 – 5.0 | ★★★★★ | DIAMOND |
+| 4.0 – 4.4 | ★★★★☆ | GOLD |
+| 3.5 – 3.9 | ★★★½☆ | PLATINUM |
+| 3.0 – 3.4 | ★★★☆☆ | GOOD |
+| 2.0 – 2.9 | ★★☆☆☆ | ACEPTABLE |
+| 0.0 – 1.9 | ★☆☆☆☆ | BAD |
+
+- El badge de Category se muestra en la tarjeta de la película con color propio (DIAMOND=cyan, GOLD=dorado, PLATINUM=plateado, GOOD=verde, ACEPTABLE=naranja, BAD=rojo)
+- Top 5 se ordena por Rating descendente
+
+### Sistema de Niveles de Usuario (Cinéfilo)
+
+El usuario acumula niveles dentro de Apolo según la cantidad de películas vistas:
+
+| Nivel | Nombre | Películas vistas |
+|-------|--------|-----------------|
+| 1 | NOVATO | 0 – 5 |
+| 2 | INTERESADO | 6 – 20 |
+| 3 | EMPODERADO | 21 – 60 |
+| 4 | SOBERBIO | 61 – 150 |
+| 5 | ERUDITO | 151 – 400 |
+| 6 | DESPIERTO | 401 – 999 |
+| 7 | ILUMINADO | 1,000+ |
+
+El nivel de Apolo es independiente del nivel de XP global de NEURAX. Al subir de nivel cinéfilo: animación de proyector + badge nuevo.
 
 ---
 
@@ -124,8 +148,9 @@ Llevar control de destinos visitados y por visitar, con clasificación y calific
 | Duración | Días | Cuántos días estuvo |
 | Fotos | Imágenes | Galería de la visita |
 | Calificación | 1-5 estrellas | Experiencia general |
-| Reseña | Texto | Notas personales |
 | Costo estimado | Monto | Cuánto costó (vinculable a Demeter) |
+
+> **Nota:** No se registra reseña en Odysseia. La calificación de estrellas es suficiente.
 
 ---
 
@@ -144,14 +169,8 @@ Idea → En Proceso → Grabada → Mezclada → Masterizada → Lanzada
 |-------|------|-------------|
 | Nombre | Texto | Título de la canción |
 | Estado | Enum | Estado en el flujo de producción |
-| Género | Texto | Género musical |
-| BPM | Número | Tempo (opcional) |
-| Tonalidad | Texto | Do mayor, La menor, etc. (opcional) |
+| Beatmaker | Texto | Beatmaker o productor del beat |
 | Fecha inicio | Date | Cuando inició el proyecto |
-| Fecha objetivo mezcla | Date | Fecha planificada para mezcla |
-| Fecha objetivo lanzamiento | Date | Fecha planificada de lanzamiento |
-| Colaboradores | Texto | Otros artistas/productores |
-| Notas | Texto | Observaciones del proceso |
 | Links | URLs | Borradores, demos online |
 
 ### Integración con Cronnos
@@ -159,10 +178,13 @@ Idea → En Proceso → Grabada → Mezclada → Masterizada → Lanzada
 - Las sesiones de producción (tiempo trabajando en la canción) se pueden registrar como actividad "Música (producción)"
 
 ### Exploración Musical
-Sección para descubrir géneros/artistas nuevos:
-- El usuario añade artistas o géneros que quiere explorar
-- Estado: Pendiente / Explorando / Escuchado / Favorito
-- Calificación 1-5
+Sección para descubrir música de todo el mundo:
+- El sistema asigna aleatoriamente un **país** y una **ciudad** al usuario
+- El usuario explora manualmente música de esa combinación (artistas, géneros, cultura musical local)
+- Al completar la exploración, marca el destino como explorado
+- El sistema entonces asigna una nueva combinación aleatoria
+- Estado por destino musical: Asignado / Explorando / Explorado
+- Calificación 1-5 de la experiencia musical de ese lugar
 
 ---
 
@@ -229,7 +251,6 @@ Lista de productos y objetos que el usuario desea adquirir, conectada con Demete
 | Categoría | Selector | Tecnología/Ropa/Hogar/Deporte/Otro |
 | Precio estimado | Monto | Costo aproximado |
 | Enlace | URL | Donde comprarlo |
-| Prioridad | Alta / Media / Baja | Qué tan urgente es |
 | Estado | Enum | Deseado / Ahorrando / Adquirido |
 | Fecha meta | Date | Fecha objetivo para adquirirlo |
 | Foto | Imagen | Foto del producto |
@@ -254,18 +275,23 @@ Lista de productos y objetos que el usuario desea adquirir, conectada con Demete
 CREATE TABLE apolo_peliculas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   usuario_id UUID REFERENCES usuarios(id) ON DELETE CASCADE,
-  titulo VARCHAR(200) NOT NULL,
-  año INTEGER,
+  year INTEGER,
+  movie VARCHAR(200) NOT NULL,
   director VARCHAR(100),
-  plataforma VARCHAR(50),
-  estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+  country VARCHAR(100),
+  producer VARCHAR(200),
+  distributed VARCHAR(200),
+  genre VARCHAR(100),
+  estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',  -- 'pendiente', 'vista'
   fecha_visualizacion DATE,
-  poster_url TEXT,
-  calificaciones JSONB,
-  -- {"guion": 8, "actuacion": 9, "direccion": 7, "fotografia": 8, "musica": 6, "efectos": 7}
-  calificacion_final DECIMAL(4,2),
+  rating DECIMAL(3,1),            -- 0.0–5.0, ingresado por el usuario
+  stars DECIMAL(3,1),             -- calculado igual a rating (representación visual)
+  category VARCHAR(20),           -- 'DIAMOND','GOLD','PLATINUM','GOOD','ACEPTABLE','BAD'
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Niveles cinéfilos de usuario en Apolo (se calcula on-the-fly, no necesita tabla propia)
+-- nivel = función de COUNT(apolo_peliculas WHERE estado='vista' AND usuario_id=X)
 
 -- Alejandría (Libros)
 CREATE TABLE alejandria_libros (
@@ -318,7 +344,7 @@ CREATE TABLE odysseia_destinos (
   duracion_dias INTEGER,
   fotos_urls TEXT[],
   calificacion SMALLINT,
-  resena TEXT,
+  -- sin campo resena
   costo_estimado DECIMAL(15,2),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -328,16 +354,23 @@ CREATE TABLE proeza_canciones (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   usuario_id UUID REFERENCES usuarios(id) ON DELETE CASCADE,
   nombre VARCHAR(200) NOT NULL,
-  estado VARCHAR(30) DEFAULT 'idea',
-  genero VARCHAR(50),
-  bpm INTEGER,
-  tonalidad VARCHAR(20),
+  estado VARCHAR(30) DEFAULT 'idea',  -- 'idea','en_proceso','grabada','mezclada','masterizada','lanzada'
+  beatmaker VARCHAR(200),
   fecha_inicio DATE,
-  fecha_objetivo_mezcla DATE,
-  fecha_objetivo_lanzamiento DATE,
-  colaboradores TEXT,
-  notas TEXT,
   links TEXT[],
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Exploración musical (destinos asignados por el sistema)
+CREATE TABLE proeza_exploracion_musical (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID REFERENCES usuarios(id) ON DELETE CASCADE,
+  pais VARCHAR(100) NOT NULL,
+  ciudad VARCHAR(100) NOT NULL,
+  estado VARCHAR(20) DEFAULT 'asignado',  -- 'asignado','explorando','explorado'
+  calificacion SMALLINT,
+  fecha_asignacion DATE DEFAULT CURRENT_DATE,
+  fecha_explorado DATE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -379,7 +412,7 @@ CREATE TABLE kubera_productos (
   precio_estimado DECIMAL(15,2),
   precio_real DECIMAL(15,2),
   enlace TEXT,
-  prioridad SMALLINT DEFAULT 2,
+  -- sin campo prioridad
   estado VARCHAR(20) DEFAULT 'deseado',
   fecha_meta DATE,
   fecha_adquisicion DATE,

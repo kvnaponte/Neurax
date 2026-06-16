@@ -36,14 +36,16 @@ XP_final = XP_base × bonus_racha × bonus_horario
 
 ### Los 6 Niveles
 
-| # | Nombre | XP Mínimo | XP Máximo | Color | Descripción |
-|---|--------|-----------|-----------|-------|-------------|
-| 1 | Superviviente | 0 | 99 | `#34d399` (verde) | Inicio del camino |
-| 2 | Aprendiz | 100 | 249 | `#fb923c` (naranja) | Primeros pasos |
-| 3 | Guerrero | 250 | 499 | `#a855f7` (púrpura) | En camino hacia la grandeza |
-| 4 | Veterano | 500 | 999 | `#60a5fa` (azul) | Consistencia probada |
-| 5 | Campeón | 1000 | 1999 | `#f472b6` (rosa) | Dominio absoluto |
-| 6 | Imbatible | 2000 | ∞ | `#fbbf24` (dorado) | ¡La leyenda eres tú! |
+Cada nivel está diseñado para durar **aproximadamente 6 meses o más** con actividad constante. Los umbrales están calibrados para un usuario que acumula ~150 XP/día promedio (actividades + misiones parciales). Los niveles superiores requieren mayor dedicación sostenida.
+
+| # | Nombre | XP Mínimo | XP Máximo | Color | Duración estimada |
+|---|--------|-----------|-----------|-------|-------------------|
+| 1 | Superviviente | 0 | 27,000 | `#34d399` (verde) | ~6 meses |
+| 2 | Aprendiz | 27,001 | 70,000 | `#fb923c` (naranja) | ~8 meses |
+| 3 | Guerrero | 70,001 | 140,000 | `#a855f7` (púrpura) | ~8-10 meses |
+| 4 | Veterano | 140,001 | 250,000 | `#60a5fa` (azul) | ~10-12 meses |
+| 5 | Campeón | 250,001 | 420,000 | `#f472b6` (rosa) | ~12-15 meses |
+| 6 | Imbatible | 420,001 | ∞ | `#fbbf24` (dorado) | Sin límite |
 
 ### Avatar por Nivel
 El avatar del dashboard muestra una ilustración RPG diferente por nivel:
@@ -81,14 +83,23 @@ Una **racha** es el número de días consecutivos en los que el usuario ha regis
 - El reset ocurre a **medianoche hora local del dispositivo**
 
 ### Bonus de Racha (Multiplicador de XP)
+
+El multiplicador es **continuo**: comienza en 1.0x el día 1 y crece **+0.011x por cada día de racha**. Alcanza 1.99x al día 90 (tercer mes) y se capea en **2.0x** a partir del día 91, donde permanece indefinidamente mientras no se rompa la racha.
+
+```
+bonus_racha = min(1.0 + (dias_racha × 0.011), 2.0)
+```
+
 | Días de racha | Multiplicador |
 |--------------|--------------|
-| 0-2 días | 1.0x (sin bonus) |
-| 3-6 días | 1.1x |
-| 7-13 días | 1.25x |
-| 14-29 días | 1.5x |
-| 30+ días | 1.75x |
-| 60+ días | 2.0x |
+| Día 1 | 1.011x |
+| Día 7 | ~1.08x |
+| Día 30 | ~1.33x |
+| Día 60 | ~1.66x |
+| Día 90 | ~1.99x |
+| Día 91+ | 2.0x (tope máximo) |
+
+Si la racha se rompe, el multiplicador vuelve a 1.0x y debe reconstruirse desde cero.
 
 ### Alerta de Racha en Riesgo
 A las **20:00** del usuario, si no hay actividad del día:
@@ -139,8 +150,8 @@ A las **20:00** del usuario, si no hay actividad del día:
 | `study_10h` | Estudioso | 10 horas de estudio acumuladas | 600 min estudio | 75 XP |
 | `sleep_5` | Bien Descansado | Dormir 7h+ durante 5 días | 5 registros sueño ≥ 420min | 60 XP |
 | `marathon` | Maratonista | 50 actividades registradas | 50 actividades totales | 100 XP |
-| `level_3` | Guerrero Confirmado | Alcanzar nivel 3 | XP ≥ 250 | 150 XP |
-| `level_6` | Imbatible | Alcanzar el nivel máximo | XP ≥ 2000 | 500 XP |
+| `level_3` | Guerrero Confirmado | Alcanzar nivel 3 | XP ≥ 70,001 | 150 XP |
+| `level_6` | Imbatible | Alcanzar el nivel máximo | XP ≥ 420,001 | 500 XP |
 | `all_types` | Hombre/Mujer Renaissance | Usar todos los tipos de actividad | 1 registro de cada tipo | 200 XP |
 | `perfect_day` | Día Perfecto | Completar todas las actividades planeadas en un día | Cronnos 100% | 150 XP |
 | `leonidas_month` | Leonidas Mensual | 20 sesiones de ejercicio en un mes | 20 sesiones/mes | 200 XP |
@@ -154,8 +165,8 @@ El usuario puede crear logros personales:
 
 ### Logros Asistidos por IA
 1. Ir a "Logros" → "Sugerir con IA"
-2. El sistema compila un resumen del comportamiento del usuario (última semana)
-3. Llamada a Claude API (haiku): prompt compacto con el resumen → sugiere 3 logros personalizados
+2. El sistema compila un resumen del comportamiento del usuario (última semana) y lo escribe en un archivo de prompt estructurado
+3. Se invoca la CLI de IA (ver spec 02-tech-stack — Estrategia CLI): el prompt incluye el resumen + archivos de memoria del usuario → devuelve 3 logros personalizados en JSON
 4. El usuario revisa las 3 sugerencias y puede:
    - **Aceptar**: se crea el logro en estado "en progreso"
    - **Modificar**: puede editar nombre/descripción antes de aceptar

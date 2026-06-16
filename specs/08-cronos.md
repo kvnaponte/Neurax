@@ -83,12 +83,17 @@ Cada evento consume una cantidad de energía del usuario. La energía es un indi
 
 ### Mobile
 - Los eventos se pueden mover **presionando y arrastrando** (long press para activar el drag)
-- Al soltar: el evento se reposiciona en el slot más cercano (snapping a 30 min)
+- Al soltar sobre un slot ocupado: aparece un **modal de decisión** con 3 opciones:
+  1. **Reemplazar**: la actividad en el campo destino es eliminada y reemplazada por la que se arrastra
+  2. **Deslizar hacia abajo**: todas las actividades del destino en adelante se desplazan un slot hacia abajo para hacer espacio
+  3. **Intercambiar**: las actividades de origen y destino intercambian posiciones entre sí
+- Al soltar sobre un slot vacío: el evento se reposiciona directamente (snapping a 30 min, sin modal)
 - Al mover un evento: todos los eventos posteriores **recalculan su energía automáticamente**
-- Si el movimiento crea un conflicto (solapamiento): vibración haptica + indicador visual rojo
+- Si tras el movimiento hay un conflicto irresolvible: vibración haptica + indicador visual rojo
 
 ### Web
 - Drag & drop nativo con dnd-kit
+- Mismo modal de decisión (3 opciones) al soltar sobre un slot ocupado
 - Comportamiento igual al mobile en cuanto a reposicionamiento y recálculo
 
 ---
@@ -102,12 +107,18 @@ Cada evento consume una cantidad de energía del usuario. La energía es un indi
 | **Odin** | Las misiones del día aparecen como tareas en Cronnos |
 | **Demeter** | Al alcanzar el presupuesto para una experiencia de Soberbio, Cronnos asigna fecha automáticamente |
 | **Soberbio** | La visita programada aparece en Cronnos como evento de experiencia |
+| **Alejandría** | Cronnos asigna automáticamente un espacio semanal para sesión de lectura según disponibilidad |
+| **Apolo** | Cronnos asigna automáticamente un espacio semanal para ver película según disponibilidad |
+| **Michelin** | Al cumplir el presupuesto destinado a una receta en Demeter, Cronnos agenda el espacio semanal para su preparación |
+| **Odysseia** | Al cumplir el presupuesto destinado a un viaje en Demeter, Cronnos agenda el espacio en el calendario para realizarlo |
+| **Némesis** | Cronnos asigna automáticamente un espacio semanal para jugar según disponibilidad |
+| **Proeza** | Cronnos asigna automáticamente un espacio semanal para explorar o crear música según disponibilidad |
 
 ---
 
-## Integración con Agente IA (API)
+## Integración con Agente IA (CLI)
 
-Cronnos expone endpoints especiales que pueden ser llamados por un agente externo con API Key:
+Cronnos expone endpoints internos que pueden ser llamados por el módulo de IA del sistema:
 
 ```
 POST /api/cronos/events        → Crear un evento
@@ -116,13 +127,13 @@ DELETE /api/cronos/events/:id  → Eliminar un evento
 GET  /api/cronos/availability  → Consultar slots disponibles
 ```
 
-El agente puede:
+El agente IA (via CLI, ver spec 02-tech-stack) puede:
 1. Reorganizar eventos para optimizar la distribución de energía
 2. Insertar nuevas tareas en slots disponibles
 3. Proponer reorganizaciones y esperar confirmación del usuario (modo "sugerencia")
 4. Ejecutar cambios directamente si tiene permiso `cronos:write` activado
 
-**Autenticación del agente:** API Key generada en Configuración → Integraciones (diferente al JWT del usuario).
+**Autenticación del agente:** API Key interna generada por el sistema para el job de IA (no expuesta al usuario).
 
 ---
 
@@ -200,10 +211,14 @@ Flujo automático:
 
 ## XP de Cronnos
 
-Las actividades completadas dentro de la ventana de tiempo planificada en Cronnos reciben **+20% de XP bonus por puntualidad**:
-- "A tiempo": completada dentro de los ±15 minutos del horario planificado
-- El bonus se aplica sobre el XP base de la actividad
-- Se muestra como "⚡ +X XP (puntualidad)" en el desglose de XP
+Cronnos **no otorga bonus directo por puntualidad** — ese incentivo proviene del sistema de Rachas (mientras más consistente es el usuario con su agenda, mayor es su racha y por tanto su multiplicador de XP).
+
+En cambio, Cronnos **castiga la impuntualidad**:
+- "A tiempo": actividad completada dentro de los ±15 minutos del horario planificado → XP normal
+- "Tardío": actividad completada fuera de esa ventana → **-15% del XP base** de la actividad
+- "No realizado": actividad planificada no marcada como completada → 0 XP (y puede afectar la racha si era la única actividad del día)
+
+El desglose de XP muestra: "⚠️ -X XP (impuntualidad)" cuando aplica el castigo.
 
 ---
 
@@ -229,7 +244,7 @@ CREATE TABLE cronos_eventos (
   energia_consumida DECIMAL(5,2),
   completado BOOLEAN DEFAULT FALSE,
   completado_at TIMESTAMPTZ,
-  xp_bonus_puntualidad BOOLEAN DEFAULT FALSE,
+  xp_penalizacion_impuntualidad BOOLEAN DEFAULT FALSE,  -- true si se completó fuera de la ventana ±15min
   
   -- Relación con otras secciones
   seccion_origen VARCHAR(30),   -- 'prodigy', 'leonidas', 'soberbio', etc.

@@ -1,5 +1,17 @@
 # NEURAX — Autenticación y Seguridad
 
+## Principio de Seguridad
+
+> Al tratarse de datos **personales y sensibles** (hábitos, finanzas, salud física, actividad diaria), la autenticación y el almacenamiento de datos deben tener **seguridad de alto nivel**. Se acepta evaluar tecnologías adicionales que mejoren la protección. Cualquier mejora de seguridad es prioritaria sobre la simplicidad de implementación.
+
+Áreas de refuerzo abiertas a evaluación:
+- Doble factor de autenticación (TOTP/HOTP) como capa adicional opcional
+- Cifrado de datos en reposo para campos sensibles (finanzas, ubicaciones)
+- Detección de accesos anómalos (IP desconocida, horario inusual)
+- Auditoría de sesiones (historial de logins con IP, dispositivo, hora)
+
+---
+
 ## Flujo General de Acceso
 
 ```
@@ -109,15 +121,15 @@ La pregunta es **única, fija, conocida solo por el usuario**. No hay lista de s
 
 ## Animación "Dimension Split"
 
-Secuencia de 2.2 segundos tras respuesta correcta a la pregunta secreta:
+Secuencia de 4.0 segundos tras respuesta correcta a la pregunta secreta (ver spec de branding para detalle visual):
 
 | Tiempo | Acción |
 |--------|--------|
-| 0 – 0.3s | La pantalla se congela, aparece un flash dorado en el centro |
-| 0.3 – 0.8s | Líneas de grieta luminosa (dorado/púrpura) se extienden desde el centro hacia los bordes en ángulos diagonales |
-| 0.8 – 1.4s | Las dos mitades de la pantalla se deslizan hacia los extremos (efecto "rasgado"), revelando el fondo de estrellas |
-| 1.4 – 1.8s | Logo NEURAX aparece brevemente con glow púrpura intenso y partículas |
-| 1.8 – 2.2s | Fade in suave del Dashboard principal |
+| 0 – 0.4s | La pantalla se congela, aparece un brillo dorado pulsante en el centro |
+| 0.4 – 1.2s | Líneas de grieta luminosa (dorado/púrpura) se extienden desde el centro hacia los bordes en ángulos diagonales |
+| 1.2 – 2.2s | Las dos mitades de la pantalla se deslizan lentamente hacia los extremos, revelando el fondo de estrellas |
+| 2.2 – 3.2s | Logo NEURAX aparece con glow púrpura intenso, partículas y efecto de respiración |
+| 3.2 – 4.0s | Fade in suave del Dashboard principal |
 
 Implementación: React Native Reanimated + SVG paths animados para las grietas.
 

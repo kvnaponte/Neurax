@@ -5,7 +5,11 @@
       "Bash(npm --version)",
       "Bash(npx --version)",
       "Bash(grep -v \"^\\\\.git$\\\\|^\\\\.agents$\\\\|^\\\\.claude$\\\\|^specs$\\\\|^PRUEBA$\")",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(gh auth *)",
+      "Bash(gh label *)",
+      "Bash(gh issue *)",
+      "Bash(sort -t'#' -k2 -n)"
     ]
   }
 }

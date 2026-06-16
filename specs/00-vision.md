@@ -11,7 +11,6 @@ NEURAX es un sistema personal de gamificación de vida real. Convierte cada háb
 ## Tagline
 
 > "Tu leyenda se construye cada día."
-> "Convierte tu vida diaria en una aventura épica."
 
 ## Principios de Diseño del Producto
 

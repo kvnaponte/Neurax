@@ -77,6 +77,17 @@ Cuello         Core completo   Cuerpo completo
 
 ## Reglas Estrictas de Leonidas
 
+### Asignación Automática de Ejercicios
+En Leonidas **el usuario no elige qué músculo entrenar**. El sistema asigna automáticamente el grupo muscular del día basándose en:
+- Las reglas de secuencia prohibida (ver tabla abajo)
+- Los tiempos de descanso mínimos de cada grupo
+- La restricción por día de la semana
+- La conveniencia comparativa: entre todos los grupos disponibles, el sistema selecciona el que es más conveniente para ese día según el historial reciente
+
+El usuario **únicamente puede marcar si realizó o no la sesión asignada**. No puede modificar el grupo asignado — el sistema garantiza que la selección cumple todas las reglas.
+
+Ejemplo: si el lunes se entrenó pecho y las reglas dicen que mañana es más conveniente abdomen que otros grupos disponibles, el martes el sistema asigna abdomen automáticamente.
+
 ### Secuencias Musculares Prohibidas
 El siguiente músculo **no puede trabajarse** el mismo día ni el día siguiente al músculo anterior:
 

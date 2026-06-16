@@ -177,7 +177,7 @@ Escala continua 0% → 100%:
 | `fadeUp` | 0.8s ease-out | Entrada de elementos |
 | `popIn` | 0.6s cubic-bezier(.2,.8,.2,1) | Aparición de overlays |
 | `xpRise` | 1.6s ease-out | Texto de XP ganado flotando hacia arriba |
-| `dimensionSplit` | 2.2s | Animación post-login (dimensiones abriéndose) |
+| `dimensionSplit` | 4.0s | Animación post-login (dimensiones abriéndose) |
 | `rayPulse` | 2.4s ease-in-out infinite | Rayos de luz en level-up |
 | `shimmer` | 1.5s linear infinite | Loading skeletons |
 
@@ -190,13 +190,13 @@ Escala continua 0% → 100%:
 
 ## Animación de Acceso — "Dimension Split"
 
-Secuencia de 2.2s que ocurre después de responder correctamente la pregunta secreta:
+Secuencia de 4.0s que ocurre después de responder correctamente la pregunta secreta. El tiempo es el suficiente para apreciar la animación en su esplendor:
 
-1. **0-0.3s**: Pantalla de login se congela, aparece un brillo dorado en el centro
-2. **0.3-0.8s**: La pantalla se "raja" diagonalmente desde el centro hacia los bordes (efecto de grieta luminosa)
-3. **0.8-1.4s**: Las dos mitades se deslizan hacia los extremos, revelando el fondo de estrellas del sistema
-4. **1.4-1.8s**: El logo de NEURAX aparece brevemente con glow púrpura
-5. **1.8-2.2s**: Fade in del dashboard principal
+1. **0–0.4s**: Pantalla de login se congela, aparece un brillo dorado pulsante en el centro
+2. **0.4–1.2s**: La pantalla se "raja" diagonalmente desde el centro hacia los bordes (efecto de grieta luminosa dorado/púrpura)
+3. **1.2–2.2s**: Las dos mitades se deslizan lentamente hacia los extremos, revelando el fondo de estrellas del sistema
+4. **2.2–3.2s**: El logo de NEURAX aparece con glow púrpura intenso, partículas y efecto de respiración
+5. **3.2–4.0s**: Fade in suave del dashboard principal
 
 ## Animación de Level Up
 

@@ -1,0 +1,36 @@
+archivo,seccion,cambios
+00-vision,Tagline,"Unicamente será ""Tu leyenda se construye cada día"""
+01-branding,"Animación de Acceso — ""Dimension Split""","El tiempo es corto para una animación, usa un tiempo prudente para ver la animación en su esplendor"
+02-tech-stack,Autenticación y Seguridad,"Al tratarse de datos personales debe tener una seguridad de alto nivel, acepto sugerencias en cuanto a tecnologias"
+02-tech-stack,Integración con Claude AI,"No se usara la API de Claude ya que cuesta, se debe encontrar una forma de automatizar el proceso de ingresar a la CLI de Claude code, o donde se deba y darle la orden, aparte debe guardar memorias para aprender, y en el futuro se cambiara a Qwen en modelo local o evaluar opencode"
+03-auth,Todo,"Al tratarse de datos personales debe tener una seguridad de alto nivel, acepto sugerencias"
+04-gamification,Sistema de Niveles,"Cada nivel debe durar aproximadamente 6 meses o mas dependiendo, para ello se asigna menos xp por acción o se aumenta el requisito de XP por nivel"
+04-gamification,Sistema de Rachas,"El bonus máximo llegara a 2.0X pero empezará en 1.0X y pasara por todos sus decimales avanzando 0.11 decimales por día cada día de la racha, para que al tercer mes tenga un total de 1.99X y al día siguiente alcanzará el máximo de 2.0X y de hay no subirá mas."
+05-activities,Reglas Estrictas de Leonidas,"En Leonidas los ejercicios se asignan automáticamente dependiendo de las conveniencias frente a las reglas, ejemplo, Lunes pecho y de acuerdo a las reglas mañana es mas conveniente hacer abdomen que los otros ejercicios en comparación. El usuario solo podrá marcar si lo realizo o no"
+08-cronos,Interacción con Drag & Drop,"Al momento de mover un ejercicio debe preguntar sí desea reemplazar la actividad que está en el campo destino, sí desea deslizar todas las actividades hacia abajo o sí desea intercambiar posiciones entre los campos origen y destino"
+08-cronos,Integración con otras Secciones,También integra la sección Alejandria ya que debe asignar dentro del tiempo de la semana un espacio para lectura
+08-cronos,Integración con otras Secciones,También integra la sección Apolo ya que debe asignar dentro del tiempo de la semana un espacio para peliculas
+08-cronos,Integración con otras Secciones,"También integra la sección Michelin ya que se gestiona igual que Soberbio, se cumple con un presupuesto destinado a la receta y luego se agenda un espacio en la semana destinado a la preparación de la receta"
+08-cronos,Integración con otras Secciones,"También integra la sección Odysseia ya que se gestiona igual que Soberbio, se cumple con un presupuesto destinado al viaje y luego se agenda un espacio para realizarlo"
+08-cronos,Integración con otras Secciones,También integra la sección Nemesis ya que se debe asignar dentro del tiempo de la semana un espacio para jugar
+08-cronos,Integración con otras Secciones,"También integra la sección Proeza ya que se debe asignar dentro del tiempo de la semana un espacio para la música, sea para explorar o para crear"
+08-cronos,XP de Cronnos,"En vez de premiar la puntualidad debe castigar la impuntualidad, y solo premia la puntualidad con la racha"
+09-odin,Estructura de Misiones y demas areas,"Cada nivel debe durar aproximadamente 6 meses o mas dependiendo, para ello se asigna menos xp por acción o se aumenta el requisito de XP por nivel"
+09-odin,Misiones Asistidas por IA,"No se usara la API de Claude ya que cuesta, se debe encontrar una forma de automatizar el proceso de ingresar a la CLI de Claude code, o donde se deba y darle la orden, aparte debe guardar memorias para aprender, y en el futuro se cambiara a Qwen en modelo local o evaluar opencode"
+10-leonidas,Pantalla Principal de Leonidas,Mantener en la sección de Mobile Layout el campo de DISPONIBILIDAD MUSCULAR
+10-leonidas,Catálogo de Ejercicios (Predefinidos),Demeter puede cargar nuevos ejercicios a Leonidas
+11-demeter,Fondos Especiales,"También integra la sección Michelin, Odysseia y Nemesis ya que todos estos ocupan presupuesto para su realización"
+11-demeter,Configuración del Presupuesto Mensual,La primera vez al entrar a la sección preguntara los gastos fijos mensuales y esto solo se volvera a preguntar cuando se oprima el boton de re distribuir gastos
+11-demeter,Gestión vía IA,"No se usara la API de Claude ya que cuesta, se debe encontrar una forma de automatizar el proceso de ingresar a la CLI de Claude code, o donde se deba y darle la orden, aparte debe guardar memorias para aprender, y en el futuro se cambiara a Qwen en modelo local o evaluar opencode"
+12-secciones-contenido,Apolo (Películas),Debe tener una ambientación con animaciones y estetica de cine antiguo
+12-secciones-contenido,Registro de Película,"Los campos son Year, Movie, Director, Country, Producer, Distributed, Genre, Rating, Stars, Category"
+12-secciones-contenido,Sistema de Calificación (solo si estado = Vista),"La calificación aparecera en rating y eso generara las estrellas que son de maximo 5 estrellas y dependiendo del rating sera la category, las categorias son DIAMOND, GOLD, PLATINUM, GOOD, ACEPTABLE, BAD"
+12-secciones-contenido,Sistema de Calificación del usuario,"El usuario tendra niveles dentro de esta sección dependiendo de la cantidad de peliculas vistas, los niveles son estos ILUMINADO, DESPIERTO, ERUDITO, SOBERBIO, EMPODERADO, INTERESADO, NOVATO donde ILUMINADO son 1000 peliculas"
+12-secciones-contenido,Odysseia (Viajes y Turismo),No se hara reseña
+12-secciones-contenido,Proeza (Música y Producción),"No tendra los campos de Género, BPM, Tonalidad, Fecha objetivo mezcla, Fecha objetivo lanzamiento, Colaboradores, Notas, incluira el campo de Beatmaker"
+12-secciones-contenido,Exploración Musical,"En vez de el usuario añadir, el sistema dara un pais y una ciudad al azar y manualmente el usuario hara la exploración"
+12-secciones-contenido,Kubera (Deseos Materiales),No tendra el campo de Prioridad
+13-soberbio-dionisio,Registro de Experiencia,No tendra el campo de Fotos ni Referencia Dionisio
+13-soberbio-dionisio,Registro de Video,
+13-soberbio-dionisio,"Flujo de ""Accionar"" un Video","Cuando se guarde el video en la secciónde guardado en TikTok automaticamente se conectara al modulo de descarga a implementar, una vez descargado pasara por el modulo de conversión, se convertira en audio y se transformara en texto y basado en el texto de enviara a su respectiva sección. Si no tiene texto se descarta la publicación. Una vez procesado correctamente un video este se eliminara de guardados de TikTok. Sí esto no es posible se aceptaran sugerencias alternativas. EN EL FUTURO SE INTEGRARA FACEBOOK E INSTAGRAM o si se puede de una vez entonces hacerlo"
+14-notifications-ai,Integración con IA (Claude),"No se usara la API de Claude ya que cuesta, se debe encontrar una forma de automatizar el proceso de ingresar a la CLI de Claude code, o donde se deba y darle la orden, aparte debe guardar memorias para aprender, y en el futuro se cambiara a Qwen en modelo local o evaluar opencode"

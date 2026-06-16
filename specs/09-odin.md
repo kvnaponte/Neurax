@@ -3,6 +3,8 @@
 ## Propósito
 Odin es el sistema de misiones diarias, semanales y mensuales. Incentiva la realización de actividades y hábitos mediante objetivos estructurados con recompensas de XP. Como en imagen_2: hay misiones principales, secundarias, un timer y cofres de recompensa épica.
 
+> **Nota sobre niveles:** El XP que otorgan las misiones de Odin contribuye al sistema de niveles global (ver spec 04-gamification). Cada nivel está diseñado para durar ~6 meses o más, por lo que las misiones son una pieza clave pero no suficiente por sí solas — el usuario debe mantener actividad sostenida en todas las secciones.
+
 ---
 
 ## Estructura de Misiones
@@ -142,10 +144,10 @@ El usuario puede crear misiones propias:
 
 ### Misiones Asistidas por IA
 1. Odin → "Sugerir misión con IA"
-2. El sistema envía a Claude: resumen de actividades de la última semana + áreas débiles
-3. Claude devuelve 3 sugerencias de misiones personalizadas
+2. El sistema genera un archivo de prompt con: resumen de actividades de la última semana + áreas débiles + archivos de memoria del usuario
+3. Se invoca la CLI de IA (ver spec 02-tech-stack — Estrategia CLI) → devuelve 3 sugerencias de misiones en JSON
 4. El usuario elige cuál activar (o la modifica antes de aceptar)
-5. Costo estimado: ~400 tokens por llamada
+5. Los archivos de memoria se actualizan con las misiones elegidas para aprendizaje futuro
 
 ---
 

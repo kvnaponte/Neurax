@@ -43,8 +43,6 @@ Gestionar la visita a restaurantes y lugares de comida. Incluye lista de lugares
 | Precio estimado | Monto | Costo estimado de la visita |
 | Fuente | Enum | Manual / Dionisio / Recomendación |
 | Fecha de visita | Date | Cuando fue (si visitado) |
-| Fotos | Imágenes | Galería de la visita |
-| Referencia Dionisio | UUID | Link al video origen si aplica |
 
 ### Sistema de Calificación Post-Visita
 Se activa al marcar un lugar como "Visitado". El sistema pregunta:
@@ -93,25 +91,35 @@ Gestionar videos guardados de TikTok, Instagram y Facebook, clasificarlos por ca
 
 ### Registro de Video
 
-#### Método 1: Manual (V1, disponible desde el inicio)
+#### Método Principal: Pipeline Automático TikTok
+El flujo automático es el método principal de Dionisio:
+
+1. **Trigger**: el usuario guarda un video en TikTok (desde la app de TikTok)
+2. **Descarga**: el sistema detecta el video guardado y lo descarga automáticamente via módulo de descarga
+3. **Conversión**: el módulo de conversión transforma el video a audio
+4. **Transcripción**: el audio se convierte a texto
+5. **Clasificación**: basándose en el texto transcrito, el sistema lo envía automáticamente a la sección correspondiente:
+   - Menciona un restaurante/lugar de comida → Soberbio
+   - Menciona un destino turístico → Odysseia
+   - Es una receta → Michelin
+   - Es un juego → Némesis
+   - Es música → Proeza
+   - Es un producto → Kubera
+   - Es ejercicio → Leonidas
+6. **Descarte**: si el video no contiene texto (solo música o efectos) → se descarta automáticamente
+7. **Limpieza**: una vez procesado correctamente → el video se elimina de los "Guardados" de TikTok
+
+Si el pipeline no es técnicamente posible (restricciones de TikTok, permisos, etc.), se acepta evaluar alternativas técnicas.
+
+**Hoja de ruta de redes:**
+- V1: TikTok (pipeline principal)
+- V2: Facebook e Instagram (mismo pipeline, si se puede implementar desde V1 incluirlos directamente)
+
+#### Método Manual (fallback)
 1. Usuario copia la URL del video desde la app de la red social
 2. Pega en Dionisio → "Agregar video"
-3. El sistema extrae metadata automáticamente via Open Graph:
-   - Título del video
-   - Thumbnail / cover
-   - Fuente (TikTok/Instagram/Facebook detectado por URL)
-   - Descripción (si disponible)
-4. El usuario:
-   - Selecciona la categoría
-   - Agrega una nota personal (opcional)
-   - Confirma si debe conectar con otra sección
-
-#### Método 2: Via API (V2, implementación futura)
-- **Facebook / Instagram**: Graph API con OAuth del usuario
-  - El usuario autoriza acceso una vez
-  - El sistema importa automáticamente los "saved" posts
-  - Sincronización periódica (cada 24h)
-- **TikTok**: TikTok for Developers API (sujeto a aprobación)
+3. El sistema extrae metadata via Open Graph (título, thumbnail, fuente)
+4. El usuario selecciona la categoría y destino manualmente
 
 ### Campos de un Video
 | Campo | Tipo | Descripción |
@@ -128,14 +136,16 @@ Gestionar videos guardados de TikTok, Instagram y Facebook, clasificarlos por ca
 | Fecha guardado | DateTime | Cuando se agregó |
 
 ### Flujo de "Accionar" un Video
-Cuando el usuario decide hacer algo con el video:
-1. Toca "Accionar" en el video
-2. Sistema muestra opciones según categoría:
+En el pipeline automático (TikTok), el video ya llega clasificado y la acción ocurre sin intervención del usuario.
+
+Para videos en método manual o corrección de clasificación automática:
+1. El usuario toca "Accionar" / "Re-clasificar" en el video
+2. Sistema muestra opciones según categoría detectada:
    - "Lugares → Añadir a Soberbio" / "Añadir a Odysseia"
    - "Productos → Añadir a Kubera"
    - "Recetas → Añadir a Michelin"
    - etc.
-3. Usuario selecciona destino → se crea automáticamente el registro en la sección destino con los datos del video como referencia
+3. Usuario selecciona destino → se crea automáticamente el registro en la sección destino
 4. El video queda en estado "Accionado" con badge de la sección destino
 
 ### Vista Principal
@@ -203,10 +213,9 @@ CREATE TABLE soberbio_lugares (
   ubicacion VARCHAR(200),
   estado VARCHAR(20) DEFAULT 'pendiente',
   precio_estimado DECIMAL(10,2),
-  fuente VARCHAR(30) DEFAULT 'manual',
-  dionisio_video_id UUID,
+  fuente VARCHAR(30) DEFAULT 'manual',  -- 'manual', 'dionisio', 'recomendacion'
+  -- sin fotos_urls ni dionisio_video_id
   fecha_visita DATE,
-  fotos_urls TEXT[],
   calificaciones JSONB,
   -- {"ingredientes": 4, "tecnica": 5, "creatividad": 3, "servicio": 4, "ambiente": 5}
   calificacion_final DECIMAL(3,1),
@@ -225,7 +234,12 @@ CREATE TABLE dionisio_videos (
   categoria VARCHAR(50),
   subcategoria VARCHAR(100),
   nota TEXT,
-  estado VARCHAR(20) DEFAULT 'guardado',
+  estado VARCHAR(20) DEFAULT 'guardado',  -- 'guardado','procesando','accionado','archivado','descartado'
+  
+  -- Pipeline automático
+  transcripcion TEXT,           -- texto extraído del audio del video
+  pipeline_estado VARCHAR(30),  -- 'pendiente','descargando','convirtiendo','transcribiendo','clasificando','completado','error'
+  pipeline_error TEXT,          -- mensaje de error si falla el pipeline
   
   -- Conexión a otras secciones
   seccion_destino VARCHAR(30),
@@ -236,6 +250,7 @@ CREATE TABLE dionisio_videos (
 );
 
 CREATE INDEX idx_dionisio_usuario_cat ON dionisio_videos(usuario_id, categoria, estado);
+CREATE INDEX idx_dionisio_pipeline ON dionisio_videos(usuario_id, pipeline_estado) WHERE pipeline_estado NOT IN ('completado', 'error');
 
 -- Némesis
 CREATE TABLE nemesis_juegos (

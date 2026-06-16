@@ -177,46 +177,69 @@ client:section_updated     → server broadcast → client:section_refresh
 
 ---
 
-## Integración con Claude AI
+## Integración con IA — Estrategia CLI
 
-### Restricción Presupuestaria
-El sistema usa **Claude API** en nivel mínimo de costo. Está diseñado para consumir la menor cantidad posible de tokens.
+### Decisión Arquitectónica
+**No se usará la API de pago de Claude** (ni Anthropic API ni ninguna otra de costo por token). En su lugar, el sistema automatiza la interacción con herramientas de IA a través de la CLI.
 
-### Uso Permitido
-| Feature | Enfoque | Estimado tokens/uso |
-|---------|---------|---------------------|
-| Sugerencia de logros personalizados | 1 llamada, prompt compacto | ~500 tokens |
-| Descripción narrativa de progreso semanal | 1 llamada, datos comprimidos | ~800 tokens |
-| Creación de misiones personalizadas en Odin | 1 llamada opcional | ~400 tokens |
+### Enfoque: Automatización via Claude Code CLI
 
-### Alternativa Manual
-Si el usuario no quiere gasto de API:
-- Botón "Copiar resumen para Claude" en estadísticas
-- Genera un texto estructurado que el usuario puede pegar en claude.ai (Plan Pro propio)
-- Las respuestas de Claude se pueden importar manualmente
+El backend implementa un módulo de IA que:
+1. **Genera un archivo de prompt** estructurado con los datos del usuario (contexto comprimido)
+2. **Invoca Claude Code CLI** (`claude`) como subproceso del backend, pasándole el prompt
+3. **Lee la respuesta** del output y la parsea en el formato esperado (JSON estructurado)
+4. **Mantiene archivos de memoria** en disco que acumulan contexto del usuario sesión a sesión
+5. Claude Code lee estos archivos de memoria en cada invocación, generando continuidad de aprendizaje
 
-### Prompt Design
-- Todos los prompts son ultra-compactos (sin explicaciones innecesarias)
-- Los datos del usuario se comprimen (no se envían historial completo, solo resúmenes)
-- El modelo a usar: `claude-haiku-4-5` (más económico, suficiente para las tareas)
+```
+Backend Job → genera prompt.md + contexto.md
+           → exec: claude --prompt prompt.md --memory-dir ./memoria/usuario_id/
+           → parsea stdout como JSON
+           → respuesta → feature (logros, misiones, clasificación, etc.)
+```
+
+### Memoria Persistente
+- Directorio por usuario: `./ai-memory/{usuario_id}/`
+- Archivos: `perfil.md`, `habitos.md`, `patrones.md`, `historial_resumen.md`
+- El sistema actualiza estos archivos automáticamente tras cada sesión relevante
+- Claude Code los consume como contexto en la siguiente invocación
+
+### Hoja de Ruta de Migración
+| Fase | Herramienta | Condición |
+|------|-------------|-----------|
+| V1 | Claude Code CLI (actual) | Disponible desde el inicio, sin costo API |
+| V2 | Qwen modelo local | Cuando esté disponible la infraestructura local |
+| V2 alt. | OpenCode | Evaluar como alternativa a Qwen según madurez |
 
 ---
 
 ## Integración Dionisio (Videos)
 
-### Estrategia Híbrida
-1. **API Oficial (cuando disponible)**:
-   - Facebook/Meta: Graph API (requiere token de usuario OAuth)
-   - TikTok: TikTok for Developers API (acceso limitado, requiere revisión)
-   - Instagram: Basic Display API (deprecada, usar Graph API de Meta)
-   - Implementación: el usuario autoriza con OAuth una sola vez
+### Pipeline Automático (Principal)
+El flujo principal de Dionisio es un pipeline automatizado:
+1. Detecta videos guardados en TikTok
+2. Los descarga automáticamente
+3. Convierte video → audio → texto (transcripción)
+4. Clasifica por contenido y envía a la sección correspondiente
+5. Elimina el video de guardados de TikTok una vez procesado
+6. Videos sin texto → descartados automáticamente
 
-2. **Fallback Manual**:
-   - El usuario pega la URL del video
-   - El sistema extrae metadata (título, thumbnail) vía Open Graph tags
-   - Clasificación automática por IA del contenido del título/descripción
+**Componentes del backend del pipeline:**
+- Módulo de descarga: downloader de TikTok (evaluar yt-dlp u herramienta equivalente)
+- Módulo de conversión: ffmpeg para video → audio
+- Módulo de transcripción: Whisper local o equivalente
+- Módulo de clasificación: CLI de IA (ver sección anterior)
 
-3. **Prioridad de implementación**: Fallback manual primero (V1), APIs sociales en V2
+### Fallback Manual
+- El usuario pega la URL del video
+- El sistema extrae metadata via Open Graph (título, thumbnail)
+- El usuario clasifica manualmente el destino
+
+### Hoja de Ruta de Redes
+| Fase | Plataforma |
+|------|-----------|
+| V1 | TikTok (pipeline principal) |
+| V2 | Facebook e Instagram (si no es posible en V1, implementar en V2)
 
 ---
 
@@ -251,9 +274,6 @@ JWT_REFRESH_SECRET=...
 
 # Redis
 REDIS_URL=redis://...
-
-# Claude API
-ANTHROPIC_API_KEY=...
 
 # Cloudinary
 CLOUDINARY_URL=...

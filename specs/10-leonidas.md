@@ -3,6 +3,8 @@
 ## Propósito
 Leonidas es el módulo de gestión de ejercicio físico. Combina planificación semanal de entrenamientos, seguimiento de series/repeticiones, y un sistema de reglas estrictas de secuencia muscular para optimizar la recuperación y prevenir lesiones.
 
+**Principio fundamental:** Los ejercicios se asignan **automáticamente** por el motor de reglas de Leonidas. El usuario únicamente puede marcar si realizó o no la sesión asignada del día. No puede modificar el grupo muscular asignado — el sistema garantiza que la asignación siempre cumple todas las reglas de descanso y secuencia.
+
 ---
 
 ## Pantalla Principal de Leonidas
@@ -163,6 +165,8 @@ Resto:  Sin restricciones adicionales
 ---
 
 ## Catálogo de Ejercicios (Predefinidos)
+
+**Nota:** También puede cargarse manualmente desde la sección de configuración de Leonidas.
 
 ### Pecho
 Flexiones · Press banca · Press inclinado · Aperturas · Fondos · Pullover

@@ -49,19 +49,12 @@ El usuario puede configurar:
 
 ---
 
-## Integración con IA (Claude)
+## Integración con IA — Estrategia CLI
 
 ### Principio de Diseño
-La integración de IA en NEURAX está diseñada para ser **mínima en costo y máxima en valor**. 
+**No se usa ninguna API de pago** (ni Anthropic ni cualquier otro proveedor). NEURAX automatiza la interacción con IA a través de la CLI de Claude Code, sin costo por token. Ver spec 02-tech-stack para la arquitectura técnica completa.
 
-Restricción presupuestaria: el usuario tiene el **Plan Pro de Claude** (claude.ai), no necesariamente acceso a la API de pago. Por esto, la arquitectura ofrece dos modos:
-
-| Modo | Descripción | Costo |
-|------|-------------|-------|
-| **API mínima** | Llamadas a Claude API con `claude-haiku-4-5` (modelo más económico) usando prompts ultra-compactos | ~$0.01-0.05 por uso |
-| **Manual (Pro)** | El sistema genera un resumen estructurado que el usuario copia y pega en claude.ai (sin costo adicional) | $0 |
-
-El usuario puede elegir qué modo usar en Configuración → IA.
+El sistema aprende sobre el usuario **manteniendo archivos de memoria** que se actualizan en cada interacción y se leen como contexto en la siguiente.
 
 ---
 
@@ -73,19 +66,15 @@ El usuario puede elegir qué modo usar en Configuración → IA.
 
 **Flujo**:
 1. Sistema recolecta: actividades de los últimos 7 días, racha actual, áreas frecuentes, logros ya desbloqueados
-2. Comprime todo en un prompt de ~300 tokens
-3. Claude genera 3 sugerencias de logros personalizados
+2. Genera archivo de prompt estructurado + carga archivos de memoria del usuario
+3. Invoca CLI de IA → devuelve 3 sugerencias de logros en JSON
 4. Usuario revisa, acepta/modifica/rechaza
+5. Sistema actualiza archivos de memoria con la decisión del usuario
 
-**Prompt template**:
+**Formato de respuesta esperado** (JSON):
+```json
+[{"nombre": "...", "descripcion": "...", "criterio_medible": "...", "xp_sugerido": 50}]
 ```
-Usuario NEURAX. Datos 7 días: [área:count,...]. Racha: N días. 
-Logros desbloqueados: [ids]. Áreas débiles: [lista].
-Sugiere 3 logros personalizados (JSON): [{nombre, descripcion, criterio_medible, xp_sugerido}]
-Sin explicaciones. Solo el JSON.
-```
-
-**Estimado**: ~500 tokens por llamada (input + output)
 
 ---
 
@@ -94,51 +83,44 @@ Sin explicaciones. Solo el JSON.
 **Cuándo se usa**: Odin → "Sugerir misión con IA"
 
 **Flujo**:
-1. Sistema recolecta: misiones de la última semana (completadas/falladas), áreas débiles del usuario
-2. Claude genera 3 misiones personalizadas adaptadas al perfil
+1. Sistema recolecta: misiones de la última semana (completadas/falladas), áreas débiles
+2. Invoca CLI de IA con contexto + memoria → devuelve 3 misiones personalizadas en JSON
 3. Usuario activa la que quiera
-
-**Estimado**: ~400 tokens por llamada
+4. Sistema actualiza memoria con la misión elegida
 
 ---
 
-#### 3. Resumen Narrativo de Progreso (Modo Manual)
+#### 3. Resumen de Progreso (Exportable)
 
-**Cuándo se usa**: Dashboard web → "Mi resumen para Claude"
+**Cuándo se usa**: Dashboard → "Exportar resumen"
 
-**Flujo** (sin API, compatible con Plan Pro):
-1. Usuario toca botón "Exportar resumen"
-2. Sistema genera texto estructurado con: XP semanal, actividades, rachas, logros, áreas débiles
-3. Se copia al clipboard con un toque
-4. El usuario lo pega en claude.ai y le hace preguntas libremente
-5. Si quiere importar algo de vuelta (ej: una misión que Claude le sugirió): lo escribe manualmente en Odin
+**Flujo**:
+1. Sistema genera texto estructurado con: XP semanal, actividades, rachas, logros, áreas débiles
+2. Se copia al clipboard con un toque
+3. El usuario puede usarlo libremente (pegarlo donde quiera)
 
 **Formato del resumen exportado**:
 ```
 # Mi semana en NEURAX — [fecha]
-- XP ganado: 320 XP
-- Racha actual: 5 días
+- XP ganado: 320 XP | Racha actual: 5 días
 - Actividades: 18 (Físicas 35%, Rutinas 40%, Económicas 25%)
-- Logros desbloqueados esta semana: Madrugador, Gym Warrior
+- Logros desbloqueados: Madrugador, Gym Warrior
 - Misiones Odin completadas: 4/7 días
 - Sección más usada: Leonidas
 - Áreas débiles: Prodigy (0 sesiones), Demeter (2 registros)
-- Meta actual: Llegar a nivel Guerrero (faltan 80 XP)
+- Meta: Nivel Guerrero (faltan 42,830 XP)
 ```
 
 ---
 
 #### 4. Clasificación Automática de Videos en Dionisio
 
-**Cuándo se usa**: Al pegar una URL en Dionisio
+**Cuándo se usa**: Al procesar un video en el pipeline automático de TikTok
 
-**Flujo (API)**:
-1. El sistema extrae el título y descripción del video via Open Graph
-2. Envía a Claude: `"Clasifica este video en: [lista de categorías]. Título: [X]. Desc: [Y]. Responde solo con la categoría."`
-3. Claude responde con la categoría en 1-3 palabras
-4. El campo de categoría se pre-rellena (el usuario puede cambiarlo)
-
-**Estimado**: ~100 tokens por clasificación
+**Flujo**:
+1. El sistema obtiene la transcripción del video (texto extraído del audio)
+2. Invoca CLI de IA con la transcripción → responde con la categoría en JSON
+3. El sistema enruta el video a la sección correspondiente automáticamente
 
 ---
 
@@ -148,13 +130,9 @@ Sección en Perfil → Configuración → Inteligencia Artificial:
 
 | Ajuste | Tipo | Default |
 |--------|------|---------|
-| Modo IA | Selector (API / Manual) | Manual |
-| API Key de Claude | Campo de texto (si modo API) | Vacío |
-| Clasificación automática Dionisio | Toggle | Off |
+| Clasificación automática Dionisio | Toggle | On |
 | Sugerencias de logros | Toggle | On |
 | Sugerencias de misiones | Toggle | On |
-
-Si el usuario activa "Modo API", debe ingresar su **propia API Key de Anthropic**. Esto permite que use la API con su propio presupuesto sin que el sistema de NEURAX incurra en costos.
 
 ---
 
@@ -203,9 +181,7 @@ CREATE TABLE notificaciones_config (
 -- Config de IA por usuario
 CREATE TABLE ia_config (
   usuario_id UUID PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
-  modo VARCHAR(20) DEFAULT 'manual',  -- 'manual', 'api'
-  anthropic_api_key_encrypted TEXT,   -- encriptada en reposo
-  clasificacion_dionisio BOOLEAN DEFAULT FALSE,
+  clasificacion_dionisio BOOLEAN DEFAULT TRUE,
   sugerencias_logros BOOLEAN DEFAULT TRUE,
   sugerencias_misiones BOOLEAN DEFAULT TRUE,
   updated_at TIMESTAMPTZ DEFAULT NOW()
