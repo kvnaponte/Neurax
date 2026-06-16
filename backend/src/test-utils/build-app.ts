@@ -5,6 +5,7 @@ import cors from '@fastify/cors'
 import dbPlugin from '../shared/plugins/db.plugin'
 import redisPlugin from '../shared/plugins/redis.plugin'
 import authRoutes from '../modules/auth/auth.routes'
+import gamificationRoutes from '../modules/gamification/gamification.routes'
 
 // No importa workers para no abrir conexiones BullMQ en tests
 
@@ -18,6 +19,7 @@ export async function buildApp() {
   // rate-limit omitido en tests (la lógica de bloqueo se prueba a nivel de servicio Redis)
   await app.register(cors)
   await app.register(authRoutes, { prefix: '/api/auth' })
+  await app.register(gamificationRoutes, { prefix: '/api/gamification' })
 
   return app
 }

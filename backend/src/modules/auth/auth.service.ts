@@ -4,6 +4,7 @@ import type { Redis } from 'ioredis'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../db/schema'
 import { makeAuthRepository } from './auth.repository'
+import { inicializarLogrosUsuario } from '../gamification/logros.service'
 import {
   ARGON2_OPTIONS,
   SYSTEM_SECRET,
@@ -62,6 +63,8 @@ export function makeAuthService(db: DB, redis: Redis) {
         token_hash: hash,
         expires_at: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
       })
+
+      await inicializarLogrosUsuario(db, user.id)
 
       return { user, refreshToken: token }
     },
