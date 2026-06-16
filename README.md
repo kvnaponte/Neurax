@@ -38,14 +38,14 @@ docker compose down -v
 
 | Servicio   | Host      | Puerto | Usuario  | Contraseña      | Base de datos |
 |------------|-----------|--------|----------|-----------------|---------------|
-| PostgreSQL | localhost | 5432   | neurax   | neurax_dev_pass | neurax_dev    |
-| Redis      | localhost | 6379   | —        | —               | —             |
+| PostgreSQL | localhost | 5434   | neurax   | neurax_dev_pass | neurax_dev    |
+| Redis      | localhost | 6381   | —        | —               | —             |
 
 ### Verificar conexión
 
 ```bash
 # PostgreSQL
-psql -h localhost -U neurax -d neurax_dev
+psql -h localhost -p 5434 -U neurax -d neurax_dev
 
 # Redis
 redis-cli ping  # debe responder PONG

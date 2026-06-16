@@ -43,12 +43,12 @@ services:
       POSTGRES_DB: neurax_dev
       POSTGRES_USER: neurax
       POSTGRES_PASSWORD: neurax_dev_pass
-    ports: ["5432:5432"]
+    ports: ["5434:5432"]
     volumes: ["postgres_data:/var/lib/postgresql/data"]
 
   redis:
     image: redis:7-alpine
-    ports: ["6379:6379"]
+    ports: ["6381:6379"]
     command: redis-server --appendonly yes
     volumes: ["redis_data:/data"]
 
@@ -127,8 +127,8 @@ Ejecutar `docker compose up -d` y verificar que ambos servicios responden.
 
 1. Crear `backend/.env`:
    ```env
-   DATABASE_URL=postgresql://neurax:neurax_dev_pass@localhost:5432/neurax_dev
-   REDIS_URL=redis://localhost:6379
+   DATABASE_URL=postgresql://neurax:neurax_dev_pass@localhost:5434/neurax_dev
+   REDIS_URL=redis://localhost:6381
    JWT_SECRET=dev_jwt_secret_change_in_prod
    JWT_REFRESH_SECRET=dev_refresh_secret_change_in_prod
    CLOUDINARY_URL=cloudinary://...
