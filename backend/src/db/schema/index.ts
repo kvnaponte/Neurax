@@ -1,3 +1,4 @@
+export * from './auth'
 export * from './core'
 export * from './gamification'
 export * from './notifications'
