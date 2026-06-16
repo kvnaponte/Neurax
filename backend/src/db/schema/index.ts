@@ -1,2 +1,15 @@
-// domain schemas will be exported from here as modules are implemented
-export {}
+export * from './core'
+export * from './gamification'
+export * from './notifications'
+export * from './actividades'
+export * from './cronos'
+export * from './odin'
+export * from './leonidas'
+export * from './demeter'
+export * from './soberbio'
+export * from './dionisio'
+export * from './apolo'
+export * from './contenido'
+export * from './proeza'
+export * from './prodigy'
+export * from './kubera'
