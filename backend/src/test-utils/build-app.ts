@@ -6,6 +6,7 @@ import dbPlugin from '../shared/plugins/db.plugin'
 import redisPlugin from '../shared/plugins/redis.plugin'
 import authRoutes from '../modules/auth/auth.routes'
 import gamificationRoutes from '../modules/gamification/gamification.routes'
+import actividadesRoutes from '../modules/actividades/actividades.routes'
 
 // No importa workers para no abrir conexiones BullMQ en tests
 
@@ -20,6 +21,7 @@ export async function buildApp() {
   await app.register(cors)
   await app.register(authRoutes, { prefix: '/api/auth' })
   await app.register(gamificationRoutes, { prefix: '/api/gamification' })
+  await app.register(actividadesRoutes, { prefix: '/api/actividades' })
 
   return app
 }

@@ -7,6 +7,7 @@ import dbPlugin from './shared/plugins/db.plugin.js'
 import redisPlugin from './shared/plugins/redis.plugin.js'
 import authRoutes from './modules/auth/auth.routes.js'
 import gamificationRoutes from './modules/gamification/gamification.routes.js'
+import actividadesRoutes from './modules/actividades/actividades.routes.js'
 import socketioPlugin from './shared/plugins/socketio.plugin.js'
 import {
   notificationsWorker,
@@ -28,6 +29,7 @@ await app.register(cors)
 await app.register(socketioPlugin)
 await app.register(authRoutes, { prefix: '/api/auth' })
 await app.register(gamificationRoutes, { prefix: '/api/gamification' })
+await app.register(actividadesRoutes, { prefix: '/api/actividades' })
 
 app.get('/health', async () => {
   return { status: 'ok' }
