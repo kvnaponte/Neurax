@@ -6,7 +6,14 @@ import rateLimit from '@fastify/rate-limit'
 import dbPlugin from './shared/plugins/db.plugin.js'
 import redisPlugin from './shared/plugins/redis.plugin.js'
 import authRoutes from './modules/auth/auth.routes.js'
-import './jobs/workers.js'
+import {
+  notificationsWorker,
+  odinDailyWorker,
+  streakCheckWorker,
+  iaTaskWorker,
+  dionisioPipelineWorker,
+} from './jobs/workers.js'
+import { setupSchedulers } from './jobs/schedulers.js'
 
 const app = Fastify({ logger: true })
 
@@ -22,8 +29,19 @@ app.get('/health', async () => {
   return { status: 'ok' }
 })
 
+app.addHook('onClose', async () => {
+  await Promise.all([
+    notificationsWorker.close(),
+    odinDailyWorker.close(),
+    streakCheckWorker.close(),
+    iaTaskWorker.close(),
+    dionisioPipelineWorker.close(),
+  ])
+})
+
 const start = async () => {
   try {
+    await setupSchedulers()
     await app.listen({ port: 3001, host: '0.0.0.0' })
   } catch (err) {
     app.log.error(err)
