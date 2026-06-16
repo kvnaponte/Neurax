@@ -1,5 +1,7 @@
 # NEURAX
 
+[![CI](https://github.com/kvnaponte/Neurax/actions/workflows/ci.yml/badge.svg)](https://github.com/kvnaponte/Neurax/actions/workflows/ci.yml)
+
 Life-RPG app — monorepo pnpm con backend Fastify, mobile React Native/Expo y web Next.js 14.
 
 ## Requisitos
