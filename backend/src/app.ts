@@ -1,8 +1,10 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import dbPlugin from './shared/plugins/db.plugin.js'
 
 const app = Fastify({ logger: true })
 
+await app.register(dbPlugin)
 await app.register(cors)
 
 app.get('/health', async () => {
