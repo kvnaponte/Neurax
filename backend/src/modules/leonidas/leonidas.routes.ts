@@ -43,7 +43,11 @@ const leonidasPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.get('/today', { preHandler: requireAccess }, async (req, reply) => {
     const { userId } = req.user as any
     const fecha = new Date()
-    return reply.send(await service.obtenerMusculoAsignado(userId, fecha))
+    const motor = await service.obtenerMusculoAsignado(userId, fecha)
+    const ejercicios_sugeridos = motor.grupo_asignado
+      ? await service.obtenerEjercicios(motor.grupo_asignado)
+      : []
+    return reply.send({ ...motor, ejercicios_sugeridos })
   })
 
   fastify.get('/disponibilidad', { preHandler: requireAccess }, async (req, reply) => {
@@ -96,6 +100,21 @@ const leonidasPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.get('/ejercicios', { preHandler: requireAccess }, async (req, reply) => {
     const { grupo } = req.query as Record<string, string>
     return reply.send(await service.obtenerEjercicios(grupo))
+  })
+
+  fastify.post('/today/complete', { preHandler: requireAccess }, async (req, reply) => {
+    const { userId } = req.user as any
+    try {
+      const data = RegistrarSesionSchema.parse(req.body)
+      const result = await service.registrarSesion(userId, {
+        ...data,
+        timestamp: data.timestamp ? new Date(data.timestamp) : undefined,
+      })
+      return reply.status(201).send(result)
+    } catch (err: any) {
+      if (err?.name === 'ZodError') return reply.status(400).send({ error: err.errors })
+      return reply.status(err?.statusCode ?? 500).send({ error: err.message })
+    }
   })
 
   fastify.post('/sincronizar-cronos', { preHandler: requireAccess }, async (req, reply) => {

@@ -20,6 +20,6 @@ export const RECOVERY_QUESTIONS = [
   },
 ] as const
 
-export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000
+export const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000
 export const SECRET_BLOCK_TTL_SECONDS = 900
 export const SECRET_MAX_ATTEMPTS = 3
