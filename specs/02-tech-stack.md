@@ -16,7 +16,7 @@
 | Peticiones HTTP | **TanStack Query** (React Query) | Cache, sync, retry automático |
 | Formularios | **React Hook Form** + **Zod** | Validación tipada |
 | Notificaciones | **Expo Notifications** | Push notifications |
-| Compilación | **Expo** (managed workflow) | Simplifica build pipeline |
+| Compilación | **Expo** (bare workflow) | Build con Fastlane (iOS/Android) |
 
 ### Web
 | Capa | Tecnología | Versión |
@@ -25,7 +25,7 @@
 | Estilos | **Tailwind CSS** + CSS Variables | Tokens del design system |
 | Estado | **Zustand** | Compartido con mobile via API |
 | Peticiones | **TanStack Query** | Mismo patrón que mobile |
-| Animaciones | **Framer Motion** | Transiciones entre secciones |
+| Animaciones | **Motion** | Transiciones entre secciones |
 | Drag & Drop | **dnd-kit** | Cronnos web |
 | Iconos | **Lucide React** | |
 | Formularios | **React Hook Form** + **Zod** | |
@@ -44,18 +44,20 @@
 | WebSockets | **Socket.IO** | Sync tiempo real web↔mobile |
 | Cola de tareas | **BullMQ** + **Redis** | Jobs async (notificaciones, cálculos) |
 | Cache | **Redis** | Sesiones, datos frecuentes |
-| File storage | **Cloudinary** | Imágenes de películas, libros, etc. |
+| File storage | **MinIO** | Self-hosted S3-compatible, imágenes de películas, libros, etc. |
 
 ### Infraestructura y DevOps
 | Servicio | Tecnología |
 |---------|-----------|
 | Containerización | **Docker** + **Docker Compose** |
-| CI/CD | **GitHub Actions** |
-| Hosting backend | **Railway** o **Render** (tier gratuito viable) |
-| Hosting web | **Vercel** (Next.js nativo) |
-| Base de datos hosted | **Neon** (PostgreSQL serverless, free tier generoso) |
-| Redis hosted | **Upstash** (serverless Redis, free tier) |
-| Monitoreo | **Sentry** (errores) |
+| CI/CD | **Forgejo Actions** (self-hosted, sintaxis compatible con GitHub Actions) |
+| Hosting backend | **Coolify** (self-hosted PaaS) |
+| Hosting web | **Coolify** (self-hosted PaaS) |
+| Base de datos hosted | **Supabase** (self-hosted PostgreSQL) |
+| Redis | **Redis** en Coolify (Docker) |
+| File storage | **MinIO** (self-hosted S3-compatible) |
+| Monitoreo errores | **GlitchTip** (self-hosted, Sentry-compatible) |
+| Uptime monitoring | **Uptime Kuma** (self-hosted) |
 
 ---
 
@@ -71,7 +73,7 @@
 ┌─────────────────────▼───────────────────────────────────┐
 │                    CLIENTE WEB                           │
 │              Next.js 14 (App Router)                     │
-│         Zustand │ TanStack Query │ Framer Motion          │
+│         Zustand │ TanStack Query │ Motion                 │
 └─────────────────────┬───────────────────────────────────┘
                       │ HTTPS + WSS
 ┌─────────────────────▼───────────────────────────────────┐
@@ -83,7 +85,7 @@
            │                      │
     ┌──────▼──────┐        ┌──────▼──────┐
     │ PostgreSQL  │        │    Redis    │
-    │  (Neon)     │        │  (Upstash)  │
+    │  (Supabase) │        │  (Coolify)  │
     └─────────────┘        └─────────────┘
 ```
 
@@ -275,8 +277,11 @@ JWT_REFRESH_SECRET=...
 # Redis
 REDIS_URL=redis://...
 
-# Cloudinary
-CLOUDINARY_URL=...
+# MinIO (self-hosted S3-compatible)
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_ACCESS_KEY=...
+MINIO_SECRET_KEY=...
+MINIO_BUCKET=neurax-media
 
 # Expo
 EXPO_ACCESS_TOKEN=...

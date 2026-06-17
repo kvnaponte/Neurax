@@ -155,7 +155,7 @@ DIGITAL
 ### Animaciones de Transición entre Secciones
 Cada sección tiene una animación de entrada única al navegar a ella:
 - Fundido + escala desde 95% a 100%
-- Duración: 0.4s con Framer Motion
+- Duración: 0.4s con Motion
 - El header de la sección aparece primero (stagger: 0.1s) seguido del contenido
 
 ### Home Page por Sección

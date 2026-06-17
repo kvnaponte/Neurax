@@ -1,7 +1,7 @@
 # Fase 10 — QA, Pulido y Despliegue
 
 **Prerequisito:** Fases 7–9 completadas (mobile + web funcionando con todos los módulos).
-**Resultado:** Aplicación desplegada en producción. Backend en Railway/Render, web en Vercel, mobile en Expo EAS Build. QA de flujos críticos completado. Animaciones pulidas.
+**Resultado:** Aplicación desplegada en producción. Backend y web en Coolify (self-hosted), mobile con bare workflow + Fastlane. QA de flujos críticos completado. Animaciones pulidas.
 **Specs de referencia:** `00-vision.md`, `01-branding.md`, `02-tech-stack.md` (servicios cloud)
 
 ---
@@ -130,68 +130,52 @@ Ajustar `useNativeDriver: true` en todas las animaciones para 60fps.
 
 ## BLOQUE C — Despliegue
 
-### Paso 10.8 — Despliegue Backend (Railway)
+### Paso 10.8 — Despliegue Backend (Coolify)
 
-1. Crear proyecto en Railway (`railway.app`)
-2. Conectar repositorio GitHub → seleccionar directorio `backend/`
-3. Configurar variables de entorno (las del `.env.example`):
-   - `DATABASE_URL`: de Neon PostgreSQL
-   - `REDIS_URL`: de Upstash Redis
+1. En el panel de Coolify, crear nueva aplicación → seleccionar el repositorio, directorio `backend/`
+2. Configurar build: usar `backend/Dockerfile` o Nixpacks
+3. Configurar variables de entorno:
+   - `DATABASE_URL`: de Supabase self-hosted
+   - `REDIS_URL`: del contenedor Redis en Coolify
+   - `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`
    - `JWT_SECRET` + `JWT_REFRESH_SECRET`: generar con `openssl rand -base64 32`
-   - `PORT=3001`
-   - `NODE_ENV=production`
-4. Build command: `pnpm build`
-5. Start command: `node dist/app.js`
-6. Ejecutar migraciones en Railway: `railway run pnpm db:migrate`
-7. Ejecutar seeds: `railway run pnpm db:seed`
-8. Verificar: `GET https://neurax-api.railway.app/health` → `{ status: 'ok' }`
-
-**Alternativa a Railway:** Render.com — mismo proceso, diferente dashboard. Railway tiene la ventaja del free tier de PostgreSQL + Redis.
+   - `PORT=3001`, `NODE_ENV=production`
+4. Ejecutar migraciones post-deploy: `pnpm --filter backend db:migrate`
+5. Ejecutar seeds: `pnpm --filter backend db:seed`
+6. Verificar: `GET https://api.neurax.app/health` → `{ status: 'ok' }`
 
 ---
 
-### Paso 10.9 — Despliegue Web (Vercel)
+### Paso 10.9 — Despliegue Web (Coolify)
 
-1. Importar repositorio en Vercel → seleccionar directorio `web/`
-2. Framework: Next.js (detectado automáticamente)
-3. Variables de entorno en Vercel:
-   - `NEXT_PUBLIC_API_URL=https://neurax-api.railway.app`
-4. Deploy settings:
-   - Build command: `pnpm build`
-   - Output directory: `.next`
-5. Deploy → obtener URL: `neurax-web.vercel.app`
-6. Verificar: acceder → redirige a `/login` → login funciona
+1. En Coolify, crear nueva aplicación → seleccionar el repositorio, directorio `web/`
+2. Configurar build: usar `web/Dockerfile` o Nixpacks (Next.js detectado automáticamente)
+3. Variables de entorno:
+   - `NEXT_PUBLIC_API_URL=https://api.neurax.app`
+   - `NEXT_PUBLIC_WS_URL=wss://api.neurax.app`
+4. Deploy → asignar dominio: `neurax.app`
+5. Verificar: acceder → redirige a `/login` → login funciona contra el backend
 
 ---
 
-### Paso 10.10 — Build Mobile (Expo EAS Build)
+### Paso 10.10 — Build Mobile (bare workflow + Fastlane)
 
-1. Instalar EAS CLI: `npm install -g eas-cli`
-2. Configurar `mobile/eas.json`:
-```json
-{
-  "cli": { "version": ">= 5.0.0" },
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal"
-    },
-    "preview": {
-      "distribution": "internal"
-    },
-    "production": {}
-  }
-}
-```
-3. Configurar variables de entorno en EAS:
-   - `EXPO_PUBLIC_API_URL=https://neurax-api.railway.app`
-4. Build para Android: `eas build --platform android --profile preview`
-5. Descargar APK para pruebas en dispositivo real
-6. Verificar: login, registro, dashboard, XP, Cronos, Dionisio
+1. Generar directorios nativos: `pnpm --filter mobile prebuild` (ejecutar una vez)
+2. Configurar variable de entorno en `apps/mobile/.env.production`:
+   - `EXPO_PUBLIC_API_URL=https://api.neurax.app`
+3. Build para Android (APK de prueba):
+   ```bash
+   cd apps/mobile
+   bundle exec fastlane android build_preview
+   ```
+4. Descargar APK desde el directorio `android/app/build/outputs/` para pruebas en dispositivo real
+5. Verificar: login, registro, dashboard, XP, Cronos, Dionisio
 
 **Para producción (Google Play / App Store):**
-- Build production: `eas build --platform all --profile production`
-- Submit: `eas submit --platform android` (requiere cuenta en Google Play Console)
+```bash
+bundle exec fastlane android deploy   # sube a Google Play Internal Track
+bundle exec fastlane ios deploy       # sube a TestFlight
+```
 
 ---
 
@@ -201,16 +185,15 @@ Ajustar `useNativeDriver: true` en todas las animaciones para 60fps.
 ```typescript
 await fastify.register(cors, {
   origin: [
-    'https://neurax-web.vercel.app',
+    'https://neurax.app',
     'http://localhost:3000',  // desarrollo web
     'neurax://',              // deep links de la app
-    /\.vercel\.app$/          // preview deployments
   ],
   credentials: true
 })
 ```
 
-**Cookies:** Asegurarse que las httpOnly cookies de auth usen `SameSite=None; Secure` en producción (para que Vercel y Railway en distintos dominios puedan compartir cookies).
+**Cookies:** Asegurarse que las httpOnly cookies de auth usen `SameSite=None; Secure` en producción (backend y web en el mismo servidor Coolify, pero dominios distintos si se usan subdominios).
 
 ---
 
@@ -234,19 +217,23 @@ Checklist de seguridad antes de considerar la app lista:
 
 ### Paso 10.13 — Monitoreo Básico
 
-**Backend Railway:**
-- Habilitar los logs de Railway (retención de 7 días en plan gratuito)
-- Crear alerta: si la app cae más de 5 min → Railway puede configurar health check automático
+**GlitchTip (error tracking — self-hosted, Sentry-compatible):**
+- Desplegar GlitchTip en Coolify
+- Instalar SDK: `pnpm add @sentry/node` (compatible con GlitchTip) en backend
+- Instalar en web: `pnpm add @sentry/nextjs`
+- Configurar `GLITCHTIP_DSN` en variables de entorno
 
-**Neon PostgreSQL:**
-- Activar backups automáticos en Neon (incluidos en el plan gratuito)
+**Uptime Kuma (uptime monitoring — self-hosted):**
+- Desplegar Uptime Kuma en Coolify
+- Añadir monitor para `GET /health` del backend
+- Configurar alerta por email si cae más de 5 min
 
-**Upstash Redis:**
-- Verificar el dashboard de Upstash: comandos/seg, uso de memoria
+**Supabase:**
+- Activar backups automáticos en el panel de Supabase self-hosted
+- Verificar el dashboard de conexiones activas
 
-**Para V2 (post-MVP):**
-- Añadir Sentry para error tracking (SDK disponible para Fastify, Next.js y Expo)
-- Añadir métricas con Prometheus/Grafana si el uso crece
+**Logs:**
+- Coolify provee logs en tiempo real para cada servicio
 
 ---
 
@@ -309,8 +296,8 @@ Checklist de seguridad antes de considerar la app lista:
 - [ ] Proeza campos simplificados (nombre, estado, beatmaker, fecha, links)
 
 ### Despliegue
-- [ ] Backend respondiendo en Railway con HTTPS
-- [ ] Web desplegada en Vercel
-- [ ] APK de Android construido y probado en dispositivo real
-- [ ] CI/CD pasa en todas las ramas
+- [ ] Backend respondiendo en Coolify con HTTPS
+- [ ] Web desplegada en Coolify
+- [ ] APK de Android construido con Fastlane y probado en dispositivo real
+- [ ] CI/CD (Forgejo Actions) pasa en todas las ramas
 - [ ] Ningún secreto expuesto en el repositorio
