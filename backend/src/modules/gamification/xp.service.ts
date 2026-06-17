@@ -13,6 +13,7 @@ export interface OtorgarXPInput {
   usuarioId: string
   xpBase: number
   bonusHorario: number
+  bonusRacha?: number  // override; if omitted, calculated from current streak
   fuente: string
   fuenteId?: string
 }
@@ -20,9 +21,12 @@ export interface OtorgarXPInput {
 export function makeXpService(db: DB) {
   const rachaService = makeRachaService(db)
 
-  async function grantXP({ usuarioId, xpBase, bonusHorario, fuente, fuenteId }: OtorgarXPInput) {
-    const diasRacha = await rachaService.calcularRachaActual(usuarioId)
-    const bonusRacha = calcularBonusRacha(diasRacha)
+  async function grantXP({ usuarioId, xpBase, bonusHorario, bonusRacha: rachaOverride, fuente, fuenteId }: OtorgarXPInput) {
+    let bonusRacha = rachaOverride
+    if (bonusRacha === undefined) {
+      const diasRacha = await rachaService.calcularRachaActual(usuarioId)
+      bonusRacha = calcularBonusRacha(diasRacha)
+    }
     const xpFinal = calcularXPFinal(xpBase, bonusRacha, bonusHorario)
 
     const [anteriorRow] = await db

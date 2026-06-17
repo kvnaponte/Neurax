@@ -8,6 +8,7 @@ import authRoutes from '../modules/auth/auth.routes'
 import gamificationRoutes from '../modules/gamification/gamification.routes'
 import actividadesRoutes from '../modules/actividades/actividades.routes'
 import cronosRoutes, { cronosExternalPlugin } from '../modules/cronos/cronos.routes'
+import odinRoutes from '../modules/odin/odin.routes'
 
 // No importa workers para no abrir conexiones BullMQ en tests
 
@@ -25,6 +26,7 @@ export async function buildApp() {
   await app.register(actividadesRoutes, { prefix: '/api/actividades' })
   await app.register(cronosRoutes, { prefix: '/api/cronos' })
   await app.register(cronosExternalPlugin, { prefix: '/api/external/cronos' })
+  await app.register(odinRoutes, { prefix: '/api/odin' })
 
   return app
 }

@@ -9,10 +9,13 @@ import authRoutes from './modules/auth/auth.routes.js'
 import gamificationRoutes from './modules/gamification/gamification.routes.js'
 import actividadesRoutes from './modules/actividades/actividades.routes.js'
 import cronosRoutes, { cronosExternalPlugin } from './modules/cronos/cronos.routes.js'
+import odinRoutes from './modules/odin/odin.routes.js'
 import socketioPlugin from './shared/plugins/socketio.plugin.js'
 import {
   notificationsWorker,
   odinDailyWorker,
+  odinWeeklyWorker,
+  odinMonthlyWorker,
   streakCheckWorker,
   iaTaskWorker,
   dionisioPipelineWorker,
@@ -33,6 +36,7 @@ await app.register(gamificationRoutes, { prefix: '/api/gamification' })
 await app.register(actividadesRoutes, { prefix: '/api/actividades' })
 await app.register(cronosRoutes, { prefix: '/api/cronos' })
 await app.register(cronosExternalPlugin, { prefix: '/api/external/cronos' })
+await app.register(odinRoutes, { prefix: '/api/odin' })
 
 app.get('/health', async () => {
   return { status: 'ok' }
@@ -42,6 +46,8 @@ app.addHook('onClose', async () => {
   await Promise.all([
     notificationsWorker.close(),
     odinDailyWorker.close(),
+    odinWeeklyWorker.close(),
+    odinMonthlyWorker.close(),
     streakCheckWorker.close(),
     iaTaskWorker.close(),
     dionisioPipelineWorker.close(),

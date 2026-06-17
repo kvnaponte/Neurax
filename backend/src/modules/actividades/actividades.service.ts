@@ -7,6 +7,7 @@ import { makeRachaService } from '../gamification/racha.service'
 import { makeXpService } from '../gamification/xp.service'
 import { makeLeonidasValidationService } from './leonidas-validation.service'
 import { ACTIVIDADES_CATALOG, LIMITES_DIARIOS_XP } from './actividades.catalog'
+import { makeOdinService } from '../odin/odin.service'
 
 type DB = PostgresJsDatabase<typeof schema>
 
@@ -127,7 +128,17 @@ export function makeActividadesService(db: DB) {
       await rachaService.marcarActividadDelDia(usuarioId, fechaStr)
 
       // Stub: leonidas.registrarSesion() — Issue #15
-      // Stub: odin.verificarProgresoMisiones() — Issue #14
+      try {
+        const odinService = makeOdinService(db)
+        await odinService.verificarProgresoMisiones(usuarioId, {
+          tipo: data.tipo,
+          area: def.area,
+          duracion_minutos: data.duracion_minutos,
+          timestamp: ts,
+        })
+      } catch (err) {
+        console.error('[registrarActividad] verificarProgresoMisiones error:', err)
+      }
 
       const rachaActual = await rachaService.calcularRachaActual(usuarioId)
 
