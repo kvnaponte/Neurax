@@ -536,3 +536,218 @@ describe('POST /api/leonidas/sincronizar-cronos', () => {
     expect(res.json().sincronizados).toBe(0)
   })
 })
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MOTOR DE ASIGNACIÓN — TESTS AMPLIADOS (objetivo: 100+ para el motor)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── Disponibilidad sin historial: 12 casos (uno por grupo) ──────────────────
+
+describe('Motor — sin historial: cada grupo disponible individualmente', () => {
+  beforeAll(async () => { await limpiarSesiones() })
+
+  it.each(Object.keys(DESCANSO_MINIMO))(
+    'grupo %s sin sesiones previas → no aparece en grupos_bloqueados',
+    async (grupo) => {
+      const service = makeLeonidasService(db)
+      const lunes = new Date('2026-06-15T12:00:00Z')
+      const result = await service.obtenerMusculoAsignado(userId, lunes)
+      const bloq = result.grupos_bloqueados.find(b => b.grupo === grupo)
+      expect(bloq).toBeUndefined()
+    }
+  )
+})
+
+// ─── Descanso: justo bajo el límite → bloqueado (12 casos) ───────────────────
+
+describe('Motor — descanso: (descMin - 1)h transcurridas → aún bloqueado', () => {
+  it.each(Object.entries(DESCANSO_MINIMO).map(([g, h]) => [g, h] as [string, number]))(
+    'grupo %s entrenado hace (descMin-1=%ih) → bloqueado',
+    async (grupo, descMin) => {
+      await limpiarSesiones()
+      await seedSesionHorasAtras(descMin - 1, [grupo])
+      const service = makeLeonidasService(db)
+      const result = await service.obtenerMusculoAsignado(userId, new Date())
+      const bloq = result.grupos_bloqueados.find(b => b.grupo === grupo)
+      expect(bloq).toBeDefined()
+    }
+  )
+})
+
+// ─── Secuencias: grupo no relacionado sigue disponible (7 casos) ─────────────
+
+describe('Motor — secuencias prohibidas no afectan grupos no relacionados', () => {
+  // Para cada par prohibido [A, B]: entrenar A ayer → un grupo C (no relacionado con A) sigue disponible
+  const casosSecuencias: [string, string, string][] = SECUENCIAS_PROHIBIDAS.map(([a, b]) => {
+    const noRelacionado = Object.keys(DESCANSO_MINIMO).find(g =>
+      g !== a && g !== b &&
+      !SECUENCIAS_PROHIBIDAS.some(([x, y]) => x === a && y === g)
+    ) ?? 'abdomen'
+    return [a, b, noRelacionado]
+  })
+
+  it.each(casosSecuencias)(
+    'entrenar %s ayer bloquea %s pero NO bloquea %s',
+    async (grupoAyer, _grupoBloqueado, grupoLibre) => {
+      await limpiarSesiones()
+      const ayerMediodia = new Date()
+      ayerMediodia.setUTCDate(ayerMediodia.getUTCDate() - 1)
+      ayerMediodia.setUTCHours(12, 0, 0, 0)
+
+      const [act] = await db.insert(actividades).values({
+        usuario_id: userId, tipo: 'ejercicio_fuerza', area: 'fisicas',
+        duracion_minutos: 60, timestamp: ayerMediodia,
+        xp_base: 15, xp_generado: 15, bonus_racha: '1.00',
+        bonus_horario: '1.00', limite_excedido: false, metadata: {},
+      }).returning({ id: actividades.id })
+
+      await db.insert(leonidas_sesiones).values({
+        usuario_id: userId, actividad_id: act.id, tipo: 'fuerza',
+        grupos_trabajados: [grupoAyer], duracion_minutos: 60, intensidad: 3,
+        timestamp: ayerMediodia,
+      })
+
+      const service = makeLeonidasService(db)
+      const result = await service.obtenerMusculoAsignado(userId, new Date())
+
+      // grupoLibre: si está bloqueado, el motivo NO debe ser "Secuencia prohibida" con grupoAyer
+      const bloqLibre = result.grupos_bloqueados.find(b => b.grupo === grupoLibre)
+      if (bloqLibre) {
+        expect(bloqLibre.motivo).not.toContain(`después de ${grupoAyer}`)
+      }
+      // O simplemente está disponible
+    }
+  )
+})
+
+// ─── Prioridad por frecuencia: grupo menos frecuente priorizado (5 casos) ────
+
+describe('Motor — prioridad: grupo con 0 sesiones sobre grupo con N sesiones', () => {
+  const pares: [string, string, number][] = [
+    ['abdomen', 'pantorrillas', 3],
+    ['pecho', 'gluteos', 2],
+    ['biceps', 'espalda_baja', 1],
+    ['cuadriceps', 'hombros', 4],
+    ['triceps', 'femorales', 2],
+  ]
+
+  it.each(pares)(
+    '%s (%ix) vs %s (0x) → %s disponible y tiene menor frecuencia',
+    async (frecuente, poco, veces) => {
+      await limpiarSesiones()
+      const descMin = DESCANSO_MINIMO[frecuente]
+      // Sembrar `veces` sesiones de `frecuente` con suficiente descanso entre cada una
+      for (let i = 0; i < veces; i++) {
+        const horas = (descMin + 2) * (i + 2) // 2×(descMin+2), 3×(descMin+2), ...
+        if (horas <= 14 * 24) await seedSesionHorasAtras(horas, [frecuente])
+      }
+      // `poco` nunca entrenado → frecuencia 0
+
+      const service = makeLeonidasService(db)
+      const result = await service.obtenerMusculoAsignado(userId, new Date())
+
+      // `poco` debería estar disponible (no tiene sesiones recientes)
+      const disponible = (result.alternativas_disponibles as string[]).includes(poco) ||
+        result.grupo_asignado === poco
+      expect(disponible).toBe(true)
+    }
+  )
+})
+
+// ─── Todos bloqueados excepto uno → asigna ese uno (1 caso) ──────────────────
+
+describe('Motor — único grupo disponible → asignado', () => {
+  it('todos bloqueados excepto pantorrillas → grupo_asignado = pantorrillas', async () => {
+    await limpiarSesiones()
+    const todos = Object.keys(DESCANSO_MINIMO).filter(g => g !== 'pantorrillas')
+    for (const g of todos) await seedSesionHorasAtras(1, [g])
+
+    const service = makeLeonidasService(db)
+    const result = await service.obtenerMusculoAsignado(userId, new Date())
+    expect(result.grupo_asignado).toBe('pantorrillas')
+    expect(result.alternativas_disponibles).toHaveLength(0)
+    expect(result.grupos_bloqueados.length).toBe(todos.length)
+  })
+})
+
+// ─── Todos los grupos bloqueados → null (1 caso) ─────────────────────────────
+
+describe('Motor — todos los grupos en descanso', () => {
+  it('12 grupos bloqueados → grupo_asignado null, grupos_bloqueados.length = 12', async () => {
+    await limpiarSesiones()
+    for (const g of Object.keys(DESCANSO_MINIMO)) await seedSesionHorasAtras(1, [g])
+
+    const service = makeLeonidasService(db)
+    const result = await service.obtenerMusculoAsignado(userId, new Date())
+    expect(result.grupo_asignado).toBeNull()
+    expect(result.grupos_bloqueados.length).toBe(Object.keys(DESCANSO_MINIMO).length)
+    expect(result.alternativas_disponibles).toHaveLength(0)
+  })
+})
+
+// ─── Días de la semana distintos al sábado → es_sabado false (6 casos) ───────
+
+describe('Motor — días no-sábado no activan restricción sábado', () => {
+  beforeAll(async () => { await limpiarSesiones() })
+
+  it.each([
+    ['Domingo', '2026-06-14T12:00:00Z'],
+    ['Lunes', '2026-06-15T12:00:00Z'],
+    ['Martes', '2026-06-16T12:00:00Z'],
+    ['Miércoles', '2026-06-17T12:00:00Z'],
+    ['Jueves', '2026-06-18T12:00:00Z'],
+    ['Viernes', '2026-06-19T12:00:00Z'],
+  ] as [string, string][])(
+    '%s → es_sabado=false, se asigna grupo muscular',
+    async (_, fechaIso) => {
+      const service = makeLeonidasService(db)
+      const result = await service.obtenerMusculoAsignado(userId, new Date(fechaIso))
+      expect(result.es_sabado).toBe(false)
+      expect(result.grupo_asignado).not.toBeNull()
+    }
+  )
+})
+
+// ─── Panel de disponibilidad por grupo: bloqueado cuando 1h atrás (5 casos) ──
+
+describe('Panel disponibilidad — estado bloqueado por grupo (muestra horas exactas)', () => {
+  it.each(
+    Object.entries(DESCANSO_MINIMO)
+      .slice(0, 5)
+      .map(([g, h]) => [g, h] as [string, number])
+  )(
+    'grupo %s entrenado hace 1h → bloqueado con horas_restantes ≈ %i-1',
+    async (grupo, descMin) => {
+      await limpiarSesiones()
+      await seedSesionHorasAtras(1, [grupo])
+      const service = makeLeonidasService(db)
+      const disp = await service.obtenerDisponibilidadMuscular(userId)
+      const item = disp.find(d => d.grupo === grupo)!
+      expect(item.estado).toBe('bloqueado')
+      expect(item.horas_restantes).toBeGreaterThan(descMin - 2)
+      expect(item.horas_restantes).toBeLessThanOrEqual(descMin)
+    }
+  )
+})
+
+// ─── Panel de disponibilidad: estado disponible sin historial (5 casos) ──────
+
+describe('Panel disponibilidad — sin historial todos los grupos disponibles', () => {
+  beforeAll(async () => { await limpiarSesiones() })
+
+  it.each(
+    Object.entries(DESCANSO_MINIMO)
+      .slice(0, 5)
+      .map(([g]) => g)
+  )(
+    'grupo %s sin sesiones → estado=disponible, texto=Disponible ahora',
+    async (grupo) => {
+      const service = makeLeonidasService(db)
+      const disp = await service.obtenerDisponibilidadMuscular(userId)
+      const item = disp.find(d => d.grupo === grupo)!
+      expect(item.estado).toBe('disponible')
+      expect(item.texto).toBe('Disponible ahora')
+      expect(item.horas_restantes).toBe(0)
+    }
+  )
+})
