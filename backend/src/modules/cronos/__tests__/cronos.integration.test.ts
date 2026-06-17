@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { randomUUID } from 'crypto'
 import type { FastifyInstance } from 'fastify'
-import { eq, and } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { buildApp } from '../../../test-utils/build-app'
 import { db } from '../../../db/index'
-import { usuarios, cronos_eventos, cronos_api_keys } from '../../../db/schema'
+import { usuarios, cronos_eventos, cronos_api_keys, xp_events } from '../../../db/schema'
 
 const EMAIL = `cronos-${Date.now()}@neurax-test.com`
 const PASSWORD = 'Test1234'
@@ -146,8 +147,22 @@ describe('Mover evento — opción deslizar', () => {
 })
 
 describe('Completar evento — penalización impuntualidad', () => {
-  it('completar evento 20min después de fin_at → xp_penalizacion_impuntualidad=true y xp_delta negativo', async () => {
-    // Create an event that ended 20 minutes ago
+  it('completar evento 20min después de fin_at → xp_penalizacion_impuntualidad=true y XP disminuye 15%', async () => {
+    // Seed an xp_event linked to a known refId to simulate a prior registered activity
+    const refId = randomUUID()
+    const xpBase = 100
+    await db.insert(xp_events).values({
+      usuario_id: userId,
+      fuente: 'actividad',
+      fuente_id: refId,
+      xp_amount: xpBase,
+      xp_base: xpBase,
+      bonus_racha: '1.00',
+      bonus_horario: '1.00',
+    })
+
+    const [before] = await db.select({ xp_total: usuarios.xp_total }).from(usuarios).where(eq(usuarios.id, userId))
+
     const now = new Date()
     const fin = new Date(now.getTime() - 20 * 60000)
     const inicio = new Date(fin.getTime() - 60 * 60000)
@@ -157,6 +172,7 @@ describe('Completar evento — penalización impuntualidad', () => {
       tipo: 'trabajo',
       inicio_at: inicio.toISOString(),
       fin_at: fin.toISOString(),
+      seccion_ref_id: refId,
     })
     expect(createRes.statusCode).toBe(201)
     const eventoId = createRes.json().id
@@ -166,13 +182,16 @@ describe('Completar evento — penalización impuntualidad', () => {
     const body = completeRes.json()
     expect(body.impuntual).toBe(true)
     expect(body.completado).toBe(true)
+    expect(body.xp_delta).toBe(-Math.round(xpBase * 0.15))
 
-    // Verify in DB
     const [dbEvento] = await db
       .select({ xp_penalizacion_impuntualidad: cronos_eventos.xp_penalizacion_impuntualidad })
       .from(cronos_eventos)
       .where(eq(cronos_eventos.id, eventoId))
     expect(dbEvento.xp_penalizacion_impuntualidad).toBe(true)
+
+    const [after] = await db.select({ xp_total: usuarios.xp_total }).from(usuarios).where(eq(usuarios.id, userId))
+    expect(Number(after.xp_total)).toBe(Number(before.xp_total) - Math.round(xpBase * 0.15))
   })
 
   it('completar evento puntualmente → xp_penalizacion_impuntualidad=false', async () => {
