@@ -10,6 +10,7 @@ import gamificationRoutes from './modules/gamification/gamification.routes.js'
 import actividadesRoutes from './modules/actividades/actividades.routes.js'
 import cronosRoutes, { cronosExternalPlugin } from './modules/cronos/cronos.routes.js'
 import odinRoutes from './modules/odin/odin.routes.js'
+import leonidasRoutes from './modules/leonidas/leonidas.routes.js'
 import socketioPlugin from './shared/plugins/socketio.plugin.js'
 import {
   notificationsWorker,
@@ -37,6 +38,7 @@ await app.register(actividadesRoutes, { prefix: '/api/actividades' })
 await app.register(cronosRoutes, { prefix: '/api/cronos' })
 await app.register(cronosExternalPlugin, { prefix: '/api/external/cronos' })
 await app.register(odinRoutes, { prefix: '/api/odin' })
+await app.register(leonidasRoutes, { prefix: '/api/leonidas' })
 
 app.get('/health', async () => {
   return { status: 'ok' }
