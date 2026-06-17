@@ -8,6 +8,7 @@ import redisPlugin from './shared/plugins/redis.plugin.js'
 import authRoutes from './modules/auth/auth.routes.js'
 import gamificationRoutes from './modules/gamification/gamification.routes.js'
 import actividadesRoutes from './modules/actividades/actividades.routes.js'
+import cronosRoutes, { cronosExternalPlugin } from './modules/cronos/cronos.routes.js'
 import socketioPlugin from './shared/plugins/socketio.plugin.js'
 import {
   notificationsWorker,
@@ -30,6 +31,8 @@ await app.register(socketioPlugin)
 await app.register(authRoutes, { prefix: '/api/auth' })
 await app.register(gamificationRoutes, { prefix: '/api/gamification' })
 await app.register(actividadesRoutes, { prefix: '/api/actividades' })
+await app.register(cronosRoutes, { prefix: '/api/cronos' })
+await app.register(cronosExternalPlugin, { prefix: '/api/external/cronos' })
 
 app.get('/health', async () => {
   return { status: 'ok' }

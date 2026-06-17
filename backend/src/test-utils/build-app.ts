@@ -7,6 +7,7 @@ import redisPlugin from '../shared/plugins/redis.plugin'
 import authRoutes from '../modules/auth/auth.routes'
 import gamificationRoutes from '../modules/gamification/gamification.routes'
 import actividadesRoutes from '../modules/actividades/actividades.routes'
+import cronosRoutes, { cronosExternalPlugin } from '../modules/cronos/cronos.routes'
 
 // No importa workers para no abrir conexiones BullMQ en tests
 
@@ -22,6 +23,8 @@ export async function buildApp() {
   await app.register(authRoutes, { prefix: '/api/auth' })
   await app.register(gamificationRoutes, { prefix: '/api/gamification' })
   await app.register(actividadesRoutes, { prefix: '/api/actividades' })
+  await app.register(cronosRoutes, { prefix: '/api/cronos' })
+  await app.register(cronosExternalPlugin, { prefix: '/api/external/cronos' })
 
   return app
 }
