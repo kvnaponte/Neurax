@@ -1,0 +1,27 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  health-check-backend:
+    runs-on: ubuntu-latest
+    needs: []
+    steps:
+      - name: Wait for Railway deploy
+        run: sleep 90
+      - name: Health check backend
+        run: |
+          curl -f --retry 5 --retry-delay 15 \
+            ${{ secrets.RAILWAY_BACKEND_URL }}/health
+
+  health-check-web:
+    runs-on: ubuntu-latest
+    needs: []
+    steps:
+      - name: Wait for Vercel deploy
+        run: sleep 60
+      - name: Health check web
+        run: |
+          curl -f --retry 3 --retry-delay 10 \
+            ${{ secrets.VERCEL_PRODUCTION_URL }}

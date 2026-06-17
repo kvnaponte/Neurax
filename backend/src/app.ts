@@ -3,6 +3,7 @@ import cors from '@fastify/cors'
 import cookie from '@fastify/cookie'
 import jwt from '@fastify/jwt'
 import rateLimit from '@fastify/rate-limit'
+import { client } from './db/index.js'
 import dbPlugin from './shared/plugins/db.plugin.js'
 import redisPlugin from './shared/plugins/redis.plugin.js'
 import authRoutes from './modules/auth/auth.routes.js'
@@ -42,8 +43,19 @@ await app.register(odinRoutes, { prefix: '/api/odin' })
 await app.register(leonidasRoutes, { prefix: '/api/leonidas' })
 await app.register(demeterRoutes, { prefix: '/api/demeter' })
 
-app.get('/health', async () => {
-  return { status: 'ok' }
+app.get('/health', async (_, reply) => {
+  try {
+    await app.redis.ping()
+    const dbOk = await client.unsafe('SELECT 1').then(() => true).catch(() => false)
+    return reply.send({
+      status: 'ok',
+      db: dbOk ? 'connected' : 'error',
+      redis: 'connected',
+      version: '1.0.0',
+    })
+  } catch {
+    return reply.status(503).send({ status: 'error', db: 'unknown', redis: 'error', version: '1.0.0' })
+  }
 })
 
 app.addHook('onClose', async () => {
