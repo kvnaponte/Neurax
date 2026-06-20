@@ -5,6 +5,7 @@ import { odin_misiones_catalogo, odin_misiones_usuario, odin_cofres, actividades
 import { getIo } from '../../shared/io'
 import { makeXpService } from '../gamification/xp.service'
 import { getCatalogMap } from './odin.catalog'
+import { crearNotificacion } from '../notifications/notifications.service'
 
 type DB = PostgresJsDatabase<typeof schema>
 
@@ -238,6 +239,12 @@ export function makeOdinService(db: DB) {
     await db.insert(odin_cofres).values({ usuario_id: usuarioId, tipo, semana_numero: semana, xp_otorgado: xpCofre })
     await xpService.otorgarXP({ usuarioId, xpBase: xpCofre, bonusHorario: 1.0, bonusRacha: 1.0, fuente: 'odin_cofre' })
     getIo()?.to(usuarioId).emit('cofre:unlocked', { tipo, xp: xpCofre, semana })
+    await crearNotificacion(db, getIo(), usuarioId, {
+      tipo: 'cofre_epico',
+      titulo: `¡Cofre ${tipo} desbloqueado!`,
+      mensaje: `Completaste todas las misiones del día. Ganaste ${xpCofre} XP.`,
+      data: { cofre_tipo: tipo, xp: xpCofre },
+    })
   }
 
   async function crearMisionPersonalizada(usuarioId: string, data: {

@@ -2,7 +2,7 @@ import { Worker } from 'bullmq'
 import { redisConnection } from '../connection.js'
 import { db } from '../../db/index.js'
 import { notificaciones_config } from '../../db/schema/index.js'
-import { crearNotificacion } from '../../modules/notifications/notifications.service.js'
+import { crearNotificacion, puedeNotificarCron } from '../../modules/notifications/notifications.service.js'
 import { getIo } from '../../shared/io.js'
 
 export const dailyReminderWorker = new Worker(
@@ -18,13 +18,14 @@ export const dailyReminderWorker = new Worker(
 
     for (const config of configs) {
       const hora = (config.hora_recordatorio as string | null)?.substring(0, 5) ?? '07:00'
-      if (hora === currentTime) {
-        await crearNotificacion(db, getIo(), config.usuario_id, {
-          tipo: 'recordatorio_diario',
-          titulo: '¡Buenos días, guerrero!',
-          mensaje: 'Registra tu actividad de hoy para mantener tu racha.',
-        })
-      }
+      if (hora !== currentTime) continue
+      if (!await puedeNotificarCron(db, config.usuario_id, 'recordatorio_diario')) continue
+
+      await crearNotificacion(db, getIo(), config.usuario_id, {
+        tipo: 'recordatorio_diario',
+        titulo: '¡Buenos días, guerrero!',
+        mensaje: 'Registra tu actividad de hoy para mantener tu racha.',
+      })
     }
   },
   { connection: redisConnection, concurrency: 1 },

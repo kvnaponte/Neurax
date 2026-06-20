@@ -3,7 +3,7 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { redisConnection } from '../connection.js'
 import { db } from '../../db/index.js'
 import { usuarios, rachas } from '../../db/schema/index.js'
-import { crearNotificacion } from '../../modules/notifications/notifications.service.js'
+import { crearNotificacion, puedeNotificarCron } from '../../modules/notifications/notifications.service.js'
 import { getIo } from '../../shared/io.js'
 
 export const streakAlertWorker = new Worker(
@@ -21,7 +21,7 @@ export const streakAlertWorker = new Worker(
         .where(and(eq(rachas.usuario_id, usuarioId), eq(rachas.fecha, today)))
         .limit(1)
 
-      if (!entry?.tiene_actividad) {
+      if (!entry?.tiene_actividad && await puedeNotificarCron(db, usuarioId, 'racha_en_riesgo')) {
         await crearNotificacion(db, getIo(), usuarioId, {
           tipo: 'racha_en_riesgo',
           titulo: 'Tu racha está en riesgo',

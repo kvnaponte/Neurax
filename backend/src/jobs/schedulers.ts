@@ -6,6 +6,7 @@ import {
   dailyReminderQueue,
   streakAlertQueue,
   cronosReminderQueue,
+  prodigyReminderQueue,
 } from './queues'
 
 export async function setupSchedulers() {
@@ -52,5 +53,12 @@ export async function setupSchedulers() {
     'cronos-reminder-cron',
     { pattern: '*/15 * * * *' },
     { name: 'cronos-reminder', data: {} },
+  )
+
+  // Daily at 08:00: check prodigy deadlines due tomorrow
+  await prodigyReminderQueue.upsertJobScheduler(
+    'prodigy-reminder-cron',
+    { pattern: '0 8 * * *' },
+    { name: 'prodigy-reminder', data: {} },
   )
 }

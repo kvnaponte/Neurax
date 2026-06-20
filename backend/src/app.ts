@@ -26,6 +26,7 @@ import {
   dailyReminderWorker,
   streakAlertWorker,
   cronosReminderWorker,
+  prodigyReminderWorker,
 } from './jobs/workers.js'
 import { setupSchedulers } from './jobs/schedulers.js'
 
@@ -75,6 +76,7 @@ app.addHook('onClose', async () => {
     dailyReminderWorker.close(),
     streakAlertWorker.close(),
     cronosReminderWorker.close(),
+    prodigyReminderWorker.close(),
   ])
 })
 

@@ -124,6 +124,29 @@ async function sendExpoPush(token: string, title: string, body: string): Promise
   }
 }
 
+// Used by cron workers to skip notification creation entirely when toggle is off
+// or user is in no_molestar window. Event-triggered notifications (logro, cofre,
+// meta) always create the DB record so the in-app badge reflects the event.
+export async function puedeNotificarCron(db: DB, usuarioId: string, tipo: string): Promise<boolean> {
+  const [config] = await db.select().from(notificaciones_config)
+    .where(eq(notificaciones_config.usuario_id, usuarioId))
+    .limit(1)
+
+  if (!config) return true
+
+  const inicio = (config.no_molestar_inicio as string | null)?.substring(0, 5) ?? null
+  const fin = (config.no_molestar_fin as string | null)?.substring(0, 5) ?? null
+  if (isInNoMolestarWindow(inicio, fin)) return false
+
+  const toggleKey = TOGGLE_KEY[tipo]
+  if (toggleKey) {
+    const toggles = (config.toggles as Record<string, boolean> | null) ?? {}
+    if (toggles[toggleKey] === false) return false
+  }
+
+  return true
+}
+
 export async function marcarLeida(db: DB, usuarioId: string, notificacionId: string): Promise<void> {
   await db.update(notificaciones)
     .set({ leida: true })

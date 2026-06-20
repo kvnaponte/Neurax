@@ -9,6 +9,8 @@ import {
 } from '../../db/schema'
 import { makeXpService } from '../gamification/xp.service'
 import { notificationsQueue } from '../../jobs/queues'
+import { crearNotificacion } from '../notifications/notifications.service'
+import { getIo } from '../../shared/io'
 
 type DB = PostgresJsDatabase<typeof schema>
 
@@ -219,11 +221,11 @@ export function makeDemeterService(db: DB) {
 
     const lugar = lugares[Math.floor(Math.random() * lugares.length)]
 
-    await notificationsQueue.add('push_notification', {
-      usuarioId,
+    await crearNotificacion(db, getIo(), usuarioId, {
+      tipo: 'meta_demeter',
       titulo: '¡Fondo Soberbio listo!',
-      cuerpo: `¡Ya tienes presupuesto para visitar ${lugar.nombre}!`,
-      data: { lugarId: lugar.id, tipo: 'soberbio_fondo_listo' },
+      mensaje: `¡Ya tienes presupuesto para visitar ${lugar.nombre}!`,
+      data: { lugar_id: lugar.id, subtipo: 'soberbio' },
     })
 
     fondo.soberbio_notificado = true
@@ -264,11 +266,11 @@ export function makeDemeterService(db: DB) {
           .set({ estado: 'listo_para_adquirir', updated_at: sql`now()` })
           .where(eq(kubera_productos.id, producto.id))
 
-        await notificationsQueue.add('push_notification', {
-          usuarioId,
+        await crearNotificacion(db, getIo(), usuarioId, {
+          tipo: 'meta_demeter',
           titulo: '¡Producto Kubera listo!',
-          cuerpo: `Ya tienes presupuesto para adquirir ${producto.nombre}`,
-          data: { productoId: producto.id, tipo: 'kubera_fondo_listo' },
+          mensaje: `Ya tienes presupuesto para adquirir ${producto.nombre}.`,
+          data: { producto_id: producto.id, subtipo: 'kubera' },
         })
       }
     }

@@ -16,3 +16,4 @@ export const dionisioPipelineQueue = new Queue('dionisio-pipeline',   { connecti
 export const dailyReminderQueue    = new Queue('daily-reminder',      { connection: redisConnection, defaultJobOptions })
 export const streakAlertQueue      = new Queue('streak-alert',        { connection: redisConnection, defaultJobOptions })
 export const cronosReminderQueue   = new Queue('cronos-reminder',     { connection: redisConnection, defaultJobOptions })
+export const prodigyReminderQueue  = new Queue('prodigy-reminder',    { connection: redisConnection, defaultJobOptions })
