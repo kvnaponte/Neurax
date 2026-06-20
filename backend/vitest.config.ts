@@ -6,5 +6,6 @@ export default defineConfig({
     testTimeout: 30000,
     hookTimeout: 30000,
     pool: 'forks', // evita conflictos de módulos nativos (argon2)
+    exclude: ['**/node_modules/**', '**/dist/**'],
   },
 })
