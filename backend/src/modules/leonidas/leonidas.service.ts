@@ -159,10 +159,9 @@ export function makeLeonidasService(db: DB) {
     for (const [grupo, descMin] of Object.entries(DESCANSO_MINIMO)) {
       const ultima = ultimaTs[grupo]
       if (ultima) {
-        const msTranscurridos = ahora.getTime() - new Date(ultima).getTime()
-        const msRequeridos = descMin * 3600000
-        if (msTranscurridos < msRequeridos - 1) {
-          const restantes = Math.ceil((msRequeridos - msTranscurridos) / 3600000)
+        const horas = (ahora.getTime() - new Date(ultima).getTime()) / 3600000
+        if (horas < descMin) {
+          const restantes = Math.ceil(descMin - horas)
           bloqueados.push({ grupo, motivo: `Necesita ${restantes}h más de descanso` })
           continue
         }

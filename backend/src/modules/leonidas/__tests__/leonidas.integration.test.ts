@@ -43,9 +43,12 @@ async function authGet(url: string) {
   return app.inject({ method: 'GET', url, headers: { Authorization: `Bearer ${accessToken}` } })
 }
 
-// Helper: seed a session with specific groups N hours ago
-async function seedSesionHorasAtras(horasAtras: number, grupos: string[], tipo = 'fuerza') {
-  const ts = new Date(Date.now() - horasAtras * 3600 * 1000)
+// A fixed weekday (Monday) used by rest-period tests to avoid day-of-week restrictions
+const FECHA_LUNES = new Date('2026-06-23T10:00:00.000Z')
+
+// Helper: seed a session with specific groups N hours ago relative to base date
+async function seedSesionHorasAtras(horasAtras: number, grupos: string[], tipo = 'fuerza', base: Date = new Date()) {
+  const ts = new Date(base.getTime() - horasAtras * 3600 * 1000)
   const [act] = await db.insert(actividades).values({
     usuario_id: userId,
     tipo: 'ejercicio_fuerza',
@@ -132,9 +135,9 @@ describe('Motor de asignación — descanso insuficiente por grupo', () => {
     'grupo %s entrenado hace 1h → bloqueado (requiere %ih)',
     async (grupo, _horas) => {
       await limpiarSesiones()
-      await seedSesionHorasAtras(1, [grupo])
+      await seedSesionHorasAtras(1, [grupo], 'fuerza', FECHA_LUNES)
       const service = makeLeonidasService(db)
-      const fecha = new Date()
+      const fecha = FECHA_LUNES
       const result = await service.obtenerMusculoAsignado(userId, fecha)
       const bloq = result.grupos_bloqueados.find(b => b.grupo === grupo)
       expect(bloq).toBeDefined()
@@ -145,9 +148,9 @@ describe('Motor de asignación — descanso insuficiente por grupo', () => {
     'grupo %s entrenado hace exactamente %ih → aún bloqueado (necesita superar el mínimo)',
     async (grupo, horas) => {
       await limpiarSesiones()
-      await seedSesionHorasAtras(horas, [grupo])
+      await seedSesionHorasAtras(horas, [grupo], 'fuerza', FECHA_LUNES)
       const service = makeLeonidasService(db)
-      const fecha = new Date()
+      const fecha = FECHA_LUNES
       const result = await service.obtenerMusculoAsignado(userId, fecha)
       // exactamente en el límite → todavía bloqueado (horas < descMin es falso, horas === descMin pasa)
       // nota: la condición es horasTranscurridas < descMin, entonces exactamente en descMin → disponible
@@ -160,9 +163,9 @@ describe('Motor de asignación — descanso insuficiente por grupo', () => {
     'grupo %s entrenado hace %ih + 1h → disponible',
     async (grupo, horas) => {
       await limpiarSesiones()
-      await seedSesionHorasAtras(horas + 1, [grupo])
+      await seedSesionHorasAtras(horas + 1, [grupo], 'fuerza', FECHA_LUNES)
       const service = makeLeonidasService(db)
-      const fecha = new Date()
+      const fecha = FECHA_LUNES
       const result = await service.obtenerMusculoAsignado(userId, fecha)
       const bloq = result.grupos_bloqueados.find(b => b.grupo === grupo)
       expect(bloq).toBeUndefined()
@@ -345,6 +348,7 @@ describe('POST /api/leonidas/sesiones', () => {
       grupos_trabajados: ['pecho'],
       duracion_minutos: 60,
       intensidad: 4,
+      timestamp: FECHA_LUNES.toISOString(),
       ejercicios: [
         { nombre: 'Press de Banca', grupo: 'pecho', series: 3, reps: 10, peso_kg: 80 },
         { nombre: 'Aperturas', grupo: 'pecho', series: 3, reps: 12, peso_kg: 20 },
@@ -359,12 +363,13 @@ describe('POST /api/leonidas/sesiones', () => {
 
   it('AC: grupo en descanso insuficiente → 422 con tiempo restante', async () => {
     await limpiarSesiones()
-    await seedSesionHorasAtras(1, ['pecho'])
+    await seedSesionHorasAtras(1, ['pecho'], 'fuerza', FECHA_LUNES)
 
     const res = await authPost('/api/leonidas/sesiones', {
       tipo: 'fuerza',
       grupos_trabajados: ['pecho'],
       duracion_minutos: 60,
+      timestamp: FECHA_LUNES.toISOString(),
     })
     expect(res.statusCode).toBe(422)
     expect(res.json().error).toContain('pecho')
@@ -412,6 +417,7 @@ describe('GET /api/leonidas/estadisticas', () => {
       tipo: 'fuerza',
       grupos_trabajados: ['pecho'],
       duracion_minutos: 60,
+      timestamp: FECHA_LUNES.toISOString(),
       ejercicios: [
         { nombre: 'Press de Banca', grupo: 'Pecho', series: 3, reps: 10, peso_kg: 80 },
         { nombre: 'Apertura', grupo: 'Pecho', series: 3, reps: 12, peso_kg: 20 },
@@ -639,12 +645,12 @@ describe('Motor — prioridad: grupo con 0 sesiones sobre grupo con N sesiones',
       // Sembrar `veces` sesiones de `frecuente` con suficiente descanso entre cada una
       for (let i = 0; i < veces; i++) {
         const horas = (descMin + 2) * (i + 2) // 2×(descMin+2), 3×(descMin+2), ...
-        if (horas <= 14 * 24) await seedSesionHorasAtras(horas, [frecuente])
+        if (horas <= 14 * 24) await seedSesionHorasAtras(horas, [frecuente], 'fuerza', FECHA_LUNES)
       }
       // `poco` nunca entrenado → frecuencia 0
 
       const service = makeLeonidasService(db)
-      const result = await service.obtenerMusculoAsignado(userId, new Date())
+      const result = await service.obtenerMusculoAsignado(userId, FECHA_LUNES)
 
       // `poco` debería estar disponible (no tiene sesiones recientes)
       const disponible = (result.alternativas_disponibles as string[]).includes(poco) ||
@@ -660,10 +666,10 @@ describe('Motor — único grupo disponible → asignado', () => {
   it('todos bloqueados excepto pantorrillas → grupo_asignado = pantorrillas', async () => {
     await limpiarSesiones()
     const todos = Object.keys(DESCANSO_MINIMO).filter(g => g !== 'pantorrillas')
-    for (const g of todos) await seedSesionHorasAtras(1, [g])
+    for (const g of todos) await seedSesionHorasAtras(1, [g], 'fuerza', FECHA_LUNES)
 
     const service = makeLeonidasService(db)
-    const result = await service.obtenerMusculoAsignado(userId, new Date())
+    const result = await service.obtenerMusculoAsignado(userId, FECHA_LUNES)
     expect(result.grupo_asignado).toBe('pantorrillas')
     expect(result.alternativas_disponibles).toHaveLength(0)
     expect(result.grupos_bloqueados.length).toBe(todos.length)
