@@ -125,6 +125,8 @@ export async function accionarVideo(usuarioId: string, videoId: string, seccion:
     case 'soberbio_lugar':
     case 'leonidas_nota':
       break
+    case 'otro':
+      return video
     default:
       break
   }

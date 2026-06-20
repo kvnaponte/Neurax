@@ -12,6 +12,7 @@ import { prodigyRoutes } from './modules/prodigy/prodigy.routes.js'
 import { nemesisRoutes } from './modules/nemesis/nemesis.routes.js'
 import { kuberaRoutes } from './modules/kubera/kubera.routes.js'
 import { dionisioRoutes } from './modules/dionisio/dionisio.routes.js'
+import './jobs/dionisio-pipeline.worker.js'
 
 const app = Fastify({ logger: true })
 
