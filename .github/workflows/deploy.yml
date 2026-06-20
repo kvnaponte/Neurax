@@ -8,8 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for Coolify deploy
+        if: ${{ secrets.BACKEND_URL != '' }}
         run: sleep 90
       - name: Health check backend
+        if: ${{ secrets.BACKEND_URL != '' }}
         run: |
           curl -f --retry 5 --retry-delay 15 \
             ${{ secrets.BACKEND_URL }}/health
@@ -18,8 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for Coolify deploy
+        if: ${{ secrets.WEB_URL != '' }}
         run: sleep 60
       - name: Health check web
+        if: ${{ secrets.WEB_URL != '' }}
         run: |
           curl -f --retry 3 --retry-delay 10 \
             ${{ secrets.WEB_URL }}
