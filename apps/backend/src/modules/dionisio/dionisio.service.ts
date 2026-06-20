@@ -10,7 +10,7 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { Queue } from 'bullmq'
 import { redisConnection } from '../../shared/redis.js'
 
-const dionisioPipelineQueue = new Queue('queue:dionisio-pipeline', { connection: redisConnection })
+const dionisioPipelineQueue = new Queue('dionisio-pipeline', { connection: redisConnection })
 
 export async function listarVideos(usuarioId: string, filtros: { categoria?: string; estado?: string } = {}) {
   const conditions = [eq(dionisioVideos.usuarioId, usuarioId), isNull(dionisioVideos.deletedAt)]

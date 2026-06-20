@@ -45,7 +45,7 @@ async function clasificarVideo(_usuarioId: string, transcripcion: string): Promi
 }
 
 export const dionisioPipelineWorker = new Worker(
-  'queue:dionisio-pipeline',
+  'dionisio-pipeline',
   async (job) => {
     const { videoId } = job.data as { videoId: string }
 

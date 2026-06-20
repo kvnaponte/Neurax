@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1781964390378,
+      "tag": "0000_violet_gateway",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781965684233,
+      "tag": "0001_lean_ser_duncan",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781968282574,
+      "tag": "0002_panoramic_agent_brand",
+      "breakpoints": true
+    }
+  ]
+}
