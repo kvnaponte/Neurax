@@ -12,6 +12,7 @@ import { prodigyRoutes } from './modules/prodigy/prodigy.routes.js'
 import { nemesisRoutes } from './modules/nemesis/nemesis.routes.js'
 import { kuberaRoutes } from './modules/kubera/kubera.routes.js'
 import { dionisioRoutes } from './modules/dionisio/dionisio.routes.js'
+import { soberbioRoutes } from './modules/soberbio/soberbio.routes.js'
 import './jobs/dionisio-pipeline.worker.js'
 
 const app = Fastify({ logger: true })
@@ -35,6 +36,7 @@ await app.register(prodigyRoutes, { prefix: '/api/prodigy' })
 await app.register(nemesisRoutes, { prefix: '/api/nemesis' })
 await app.register(kuberaRoutes, { prefix: '/api/kubera' })
 await app.register(dionisioRoutes, { prefix: '/api/dionisio' })
+await app.register(soberbioRoutes, { prefix: '/api/soberbio' })
 
 // Start
 const PORT = Number(process.env.PORT ?? 3001)
