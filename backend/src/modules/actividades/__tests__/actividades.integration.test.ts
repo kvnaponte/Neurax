@@ -30,6 +30,7 @@ async function authGet(url: string) {
 }
 
 beforeAll(async () => {
+  vi.useFakeTimers({ now: FECHA_LUNES })
   app = await buildApp()
   await app.ready()
   await db.delete(usuarios).where(eq(usuarios.email, EMAIL))
@@ -43,6 +44,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await db.delete(usuarios).where(eq(usuarios.email, EMAIL))
   await app.close()
+  vi.useRealTimers()
 })
 
 describe('POST /api/actividades — cálculo XP base', () => {
@@ -68,7 +70,7 @@ describe('POST /api/actividades — cálculo XP base', () => {
 
 describe('POST /api/actividades — bonus_horario', () => {
   it('ejercicio_fuerza a las 07:00 UTC → bonus_horario=1.2', async () => {
-    const ts = new Date(FECHA_LUNES)
+    const ts = new Date()
     ts.setUTCHours(7, 0, 0, 0)
     const res = await authPost('/api/actividades', {
       tipo: 'ejercicio_fuerza',
@@ -80,7 +82,7 @@ describe('POST /api/actividades — bonus_horario', () => {
   })
 
   it('ejercicio_fuerza a las 15:00 UTC → bonus_horario=1.0', async () => {
-    const ts = new Date(FECHA_LUNES)
+    const ts = new Date()
     ts.setUTCHours(15, 0, 0, 0)
     const res = await authPost('/api/actividades', {
       tipo: 'ejercicio_fuerza',
@@ -107,7 +109,7 @@ describe('POST /api/actividades — bonus_horario', () => {
 describe('POST /api/actividades — límite diario por área', () => {
   it('área fisicas con 200 XP acumulados → siguiente xp_otorgado=0 y limite_excedido=true', async () => {
     // Insertar directamente 200 XP en fisicas para simular límite alcanzado
-    const today = new Date(FECHA_LUNES)
+    const today = new Date()
     today.setUTCHours(12, 0, 0, 0)
     await db.insert(actividades).values({
       usuario_id: userId,
@@ -122,7 +124,7 @@ describe('POST /api/actividades — límite diario por área', () => {
       limite_excedido: false,
     })
 
-    const res = await authPost('/api/actividades', { tipo: 'ejercicio_cardio', duracion_minutos: 30, timestamp: FECHA_LUNES.toISOString() })
+    const res = await authPost('/api/actividades', { tipo: 'ejercicio_cardio', duracion_minutos: 30 })
     expect(res.statusCode).toBe(201)
     const body = res.json()
     expect(body.xp_otorgado).toBe(0)
@@ -151,14 +153,13 @@ describe('POST /api/actividades — validaciones Leonidas (descanso muscular)', 
       grupos_trabajados: ['pecho'],
       duracion_minutos: 60,
       intensidad: 3,
-      timestamp: new Date(FECHA_LUNES.getTime() - 2 * 60 * 60 * 1000), // hace 2h relativo al lunes
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // hace 2h
     })
 
     const res = await authPost('/api/actividades', {
       tipo: 'ejercicio_fuerza',
       duracion_minutos: 60,
       metadata: { grupo_muscular: 'pecho' },
-      timestamp: FECHA_LUNES.toISOString(),
     })
     expect(res.statusCode).toBe(422)
     expect(res.json().error).toMatch(/pecho/)
