@@ -19,25 +19,25 @@
 
 | Capa | Tecnología |
 |------|-----------|
-| Mobile | React Native + Expo (managed workflow) |
+| Mobile | React Native + Expo (bare workflow + Fastlane) |
 | Web | Next.js 14 (App Router) |
 | Backend | Fastify 4 + Node.js 20 LTS |
 | ORM | Drizzle ORM (TypeScript) |
-| Base de datos | PostgreSQL 16 (Neon en producción) |
-| Cache / Colas | Redis (Upstash) + BullMQ |
+| Base de datos | PostgreSQL 16 (Supabase self-hosted) |
+| Cache / Colas | Redis (Coolify) + BullMQ |
 | Auth | JWT (access 15min + refresh 30 días) + Argon2id |
 | Tiempo real | Socket.IO |
 | Animaciones Mobile | React Native Reanimated v3 |
-| Animaciones Web | Framer Motion |
+| Animaciones Web | Motion |
 | Estado global | Zustand |
 | Data fetching | TanStack Query v5 |
 | Iconos | Lucide (React Native + React) |
-| Storage imágenes | Cloudinary |
+| Storage imágenes | MinIO (self-hosted S3-compatible) |
 | IA | Claude Code CLI (subproceso, sin API de pago) |
 | Video pipeline | yt-dlp + ffmpeg + Whisper |
-| CI/CD | GitHub Actions |
-| Hosting backend | Railway o Render |
-| Hosting web | Vercel |
+| CI/CD | Forgejo Actions (self-hosted) |
+| Hosting backend | Coolify (self-hosted PaaS) |
+| Hosting web | Coolify (self-hosted PaaS) |
 
 ---
 

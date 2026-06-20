@@ -9,7 +9,26 @@
       "Bash(gh auth *)",
       "Bash(gh label *)",
       "Bash(gh issue *)",
-      "Bash(sort -t'#' -k2 -n)"
+      "Bash(sort -t'#' -k2 -n)",
+      "Bash(git checkout *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm ls *)",
+      "Bash(pnpm list *)",
+      "Bash(pnpm *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(gh run *)",
+      "Bash(npx tsc *)",
+      "Bash(npx vitest *)",
+      "Bash(docker compose *)",
+      "Bash(PGPASSWORD=neurax_dev_pass psql *)",
+      "Bash(curl -s http://localhost:3001/health)",
+      "Bash(psql postgresql://neurax:neurax_dev_pass@localhost:5434/neurax_dev -c \"\\\\dt\")",
+      "Bash(psql postgresql://neurax:neurax_dev_pass@localhost:5434/neurax_dev -c \"SELECT COUNT\\(*\\) FROM odin_misiones_catalogo;\")",
+      "Bash(psql postgresql://neurax:neurax_dev_pass@localhost:5434/neurax_dev -c \"SELECT COUNT\\(*\\) FROM leonidas_ejercicios_catalogo;\")",
+      "Bash(node *)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

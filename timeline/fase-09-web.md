@@ -22,7 +22,7 @@ Instalar dependencias adicionales:
 pnpm add @tanstack/react-query axios socket.io-client
 pnpm add react-hook-form zod @hookform/resolvers
 pnpm add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities   # drag & drop para Cronos
-pnpm add framer-motion                                         # animaciones
+pnpm add motion                                                # animaciones
 pnpm add recharts                                              # gráficos para stats
 pnpm add date-fns                                             # manejo de fechas
 pnpm add js-cookie                                            # manejo de cookies

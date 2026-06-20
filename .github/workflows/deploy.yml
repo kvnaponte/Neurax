@@ -1,0 +1,25 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  health-check-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Coolify deploy
+        run: sleep 90
+      - name: Health check backend
+        run: |
+          curl -f --retry 5 --retry-delay 15 \
+            ${{ secrets.BACKEND_URL }}/health
+
+  health-check-web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Coolify deploy
+        run: sleep 60
+      - name: Health check web
+        run: |
+          curl -f --retry 3 --retry-delay 10 \
+            ${{ secrets.WEB_URL }}

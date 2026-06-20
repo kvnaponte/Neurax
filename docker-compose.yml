@@ -1,34 +1,46 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: neurax_postgres
-    restart: unless-stopped
     environment:
-      POSTGRES_USER: neurax_admin
-      POSTGRES_PASSWORD: neurax_dev_password
-      POSTGRES_DB: neurax_db
+      POSTGRES_DB: neurax_dev
+      POSTGRES_USER: neurax
+      POSTGRES_PASSWORD: neurax_dev_pass
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U neurax_admin -d neurax_db"]
+      test: ["CMD-SHELL", "pg_isready -U neurax -d neurax_dev"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: neurax_redis
-    restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6381:6379"
+    command: redis-server --appendonly yes
     volumes:
-      - ./data/redis:/data
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: neurax_minio_key
+      MINIO_ROOT_PASSWORD: neurax_minio_secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -36,3 +48,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  minio_data:

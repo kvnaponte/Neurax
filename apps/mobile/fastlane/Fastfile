@@ -1,0 +1,43 @@
+default_platform(:android)
+
+platform :android do
+  desc "Build preview APK"
+  lane :build_preview do
+    gradle(
+      project_dir: "android/",
+      task: "assemble",
+      build_type: "Release",
+      properties: {
+        "android.injected.signing.store.file" => ENV["KEYSTORE_PATH"],
+        "android.injected.signing.store.password" => ENV["KEYSTORE_PASSWORD"],
+        "android.injected.signing.key.alias" => ENV["KEY_ALIAS"],
+        "android.injected.signing.key.password" => ENV["KEY_PASSWORD"],
+      }
+    )
+  end
+
+  desc "Build and upload to Google Play Internal Track"
+  lane :deploy do
+    gradle(
+      project_dir: "android/",
+      task: "bundle",
+      build_type: "Release",
+      properties: {
+        "android.injected.signing.store.file" => ENV["KEYSTORE_PATH"],
+        "android.injected.signing.store.password" => ENV["KEYSTORE_PASSWORD"],
+        "android.injected.signing.key.alias" => ENV["KEY_ALIAS"],
+        "android.injected.signing.key.password" => ENV["KEY_PASSWORD"],
+      }
+    )
+    upload_to_play_store(track: "internal")
+  end
+end
+
+platform :ios do
+  desc "Build and upload to TestFlight"
+  lane :deploy do
+    match(type: "appstore")
+    build_app(workspace: "ios/neurax.xcworkspace", scheme: "neurax")
+    upload_to_testflight
+  end
+end

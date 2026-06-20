@@ -43,12 +43,12 @@ services:
       POSTGRES_DB: neurax_dev
       POSTGRES_USER: neurax
       POSTGRES_PASSWORD: neurax_dev_pass
-    ports: ["5432:5432"]
+    ports: ["5434:5432"]
     volumes: ["postgres_data:/var/lib/postgresql/data"]
 
   redis:
     image: redis:7-alpine
-    ports: ["6379:6379"]
+    ports: ["6381:6379"]
     command: redis-server --appendonly yes
     volumes: ["redis_data:/data"]
 
@@ -127,8 +127,8 @@ Ejecutar `docker compose up -d` y verificar que ambos servicios responden.
 
 1. Crear `backend/.env`:
    ```env
-   DATABASE_URL=postgresql://neurax:neurax_dev_pass@localhost:5432/neurax_dev
-   REDIS_URL=redis://localhost:6379
+   DATABASE_URL=postgresql://neurax:neurax_dev_pass@localhost:5434/neurax_dev
+   REDIS_URL=redis://localhost:6381
    JWT_SECRET=dev_jwt_secret_change_in_prod
    JWT_REFRESH_SECRET=dev_refresh_secret_change_in_prod
    CLOUDINARY_URL=cloudinary://...
@@ -283,11 +283,11 @@ Script que ejecuta ambos seeds con manejo de errores y evita duplicados (`ON CON
 
 ## Paso 0.9 — Variables de Entorno de Producción
 
-**Servicios externos a configurar:**
+**Servicios self-hosted a configurar en el servidor Coolify:**
 
-1. **Neon PostgreSQL**: crear proyecto en neon.tech, obtener `DATABASE_URL` de producción
-2. **Upstash Redis**: crear base en upstash.com, obtener `REDIS_URL` de producción
-3. **Cloudinary**: crear cuenta, obtener `CLOUDINARY_URL`
+1. **Supabase self-hosted**: instalar Supabase en el servidor, obtener `DATABASE_URL` de producción
+2. **Redis en Coolify**: desplegar contenedor Redis en Coolify, obtener `REDIS_URL`
+3. **MinIO**: desplegar contenedor MinIO en Coolify, configurar bucket `neurax-media`
 4. Crear `backend/.env.production` (NO commitear — solo documentar qué variables existen en `backend/.env.example`)
 
 **Archivo:** `backend/.env.example`
@@ -296,7 +296,10 @@ DATABASE_URL=postgresql://user:pass@host/db
 REDIS_URL=redis://user:pass@host:port
 JWT_SECRET=min_32_chars_random
 JWT_REFRESH_SECRET=min_32_chars_random
-CLOUDINARY_URL=cloudinary://key:secret@cloud
+MINIO_ENDPOINT=http://minio:9000
+MINIO_ACCESS_KEY=...
+MINIO_SECRET_KEY=...
+MINIO_BUCKET=neurax-media
 PORT=3001
 NODE_ENV=production
 ```
@@ -359,5 +362,5 @@ jobs:
 - [ ] Las 30+ tablas existen en la base de datos
 - [ ] Los seeds de Odin y Leonidas están insertados
 - [ ] Redis y BullMQ se conectan sin errores
-- [ ] Variables de entorno de producción configuradas en los servicios externos
+- [ ] Variables de entorno de producción configuradas en Coolify (Supabase, Redis, MinIO)
 - [ ] CI/CD pasa en GitHub Actions

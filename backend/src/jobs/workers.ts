@@ -1,0 +1,7 @@
+export { notificationsWorker }    from './workers/notifications.worker'
+export { odinDailyWorker }        from './workers/odin-daily.worker'
+export { odinWeeklyWorker }       from './workers/odin-weekly.worker'
+export { odinMonthlyWorker }      from './workers/odin-monthly.worker'
+export { streakCheckWorker }      from './workers/streak-check.worker'
+export { iaTaskWorker }           from './workers/ia-task.worker'
+export { dionisioPipelineWorker } from './workers/dionisio-pipeline.worker'
