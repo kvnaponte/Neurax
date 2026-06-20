@@ -5,6 +5,7 @@ import { usuario_achievements, actividades, usuarios, cronos_eventos } from '../
 import { getIo } from '../../shared/io'
 import { ACHIEVEMENTS_CATALOG, TIPOS_REQUERIDOS, getCatalogEntry } from './achievements.catalog'
 import type { RachaService } from './racha.service'
+import { crearNotificacion } from '../notifications/notifications.service'
 
 type DB = PostgresJsDatabase<typeof schema>
 
@@ -138,6 +139,13 @@ export function makeLogrosService(db: DB, rachaService: RachaService, otorgarXP:
             nombre: catalogEntry.nombre,
             xp: catalogEntry.xp,
             tipo: 'sistema',
+          })
+
+          await crearNotificacion(db, getIo(), usuarioId, {
+            tipo: 'logro_desbloqueado',
+            titulo: `¡Logro desbloqueado: ${catalogEntry.nombre}!`,
+            mensaje: `Has ganado ${catalogEntry.xp} XP. ${catalogEntry.descripcion ?? ''}`.trim(),
+            data: { achievement_id: catalogEntry.id, xp: catalogEntry.xp },
           })
         }
       }
