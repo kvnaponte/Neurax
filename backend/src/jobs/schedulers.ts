@@ -1,4 +1,12 @@
-import { odinDailyQueue, odinWeeklyQueue, odinMonthlyQueue, streakCheckQueue } from './queues'
+import {
+  odinDailyQueue,
+  odinWeeklyQueue,
+  odinMonthlyQueue,
+  streakCheckQueue,
+  dailyReminderQueue,
+  streakAlertQueue,
+  cronosReminderQueue,
+} from './queues'
 
 export async function setupSchedulers() {
   await odinDailyQueue.upsertJobScheduler(
@@ -23,5 +31,26 @@ export async function setupSchedulers() {
     'streak-check-cron',
     { pattern: '55 23 * * *' },
     { name: 'streak-check', data: {} },
+  )
+
+  // Every minute: check which users have hora_recordatorio = now
+  await dailyReminderQueue.upsertJobScheduler(
+    'daily-reminder-cron',
+    { pattern: '* * * * *' },
+    { name: 'daily-reminder', data: {} },
+  )
+
+  // 20:00 every day: alert users with no activity today
+  await streakAlertQueue.upsertJobScheduler(
+    'streak-alert-cron',
+    { pattern: '0 20 * * *' },
+    { name: 'streak-alert', data: {} },
+  )
+
+  // Every 15 minutes: find Cronos events starting in ~1h
+  await cronosReminderQueue.upsertJobScheduler(
+    'cronos-reminder-cron',
+    { pattern: '*/15 * * * *' },
+    { name: 'cronos-reminder', data: {} },
   )
 }

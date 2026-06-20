@@ -13,3 +13,6 @@ export const odinMonthlyQueue      = new Queue('odin-monthly',        { connecti
 export const streakCheckQueue      = new Queue('streak-check',        { connection: redisConnection, defaultJobOptions })
 export const aiTaskQueue           = new Queue('ai-task',             { connection: redisConnection, defaultJobOptions })
 export const dionisioPipelineQueue = new Queue('dionisio-pipeline',   { connection: redisConnection, defaultJobOptions })
+export const dailyReminderQueue    = new Queue('daily-reminder',      { connection: redisConnection, defaultJobOptions })
+export const streakAlertQueue      = new Queue('streak-alert',        { connection: redisConnection, defaultJobOptions })
+export const cronosReminderQueue   = new Queue('cronos-reminder',     { connection: redisConnection, defaultJobOptions })

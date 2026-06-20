@@ -13,6 +13,7 @@ import cronosRoutes, { cronosExternalPlugin } from './modules/cronos/cronos.rout
 import odinRoutes from './modules/odin/odin.routes.js'
 import leonidasRoutes from './modules/leonidas/leonidas.routes.js'
 import demeterRoutes from './modules/demeter/demeter.routes.js'
+import notificationsRoutes from './modules/notifications/notifications.routes.js'
 import socketioPlugin from './shared/plugins/socketio.plugin.js'
 import {
   notificationsWorker,
@@ -22,6 +23,9 @@ import {
   streakCheckWorker,
   iaTaskWorker,
   dionisioPipelineWorker,
+  dailyReminderWorker,
+  streakAlertWorker,
+  cronosReminderWorker,
 } from './jobs/workers.js'
 import { setupSchedulers } from './jobs/schedulers.js'
 
@@ -42,6 +46,7 @@ await app.register(cronosExternalPlugin, { prefix: '/api/external/cronos' })
 await app.register(odinRoutes, { prefix: '/api/odin' })
 await app.register(leonidasRoutes, { prefix: '/api/leonidas' })
 await app.register(demeterRoutes, { prefix: '/api/demeter' })
+await app.register(notificationsRoutes, { prefix: '/api/notifications' })
 
 app.get('/health', async (_, reply) => {
   try {
@@ -67,6 +72,9 @@ app.addHook('onClose', async () => {
     streakCheckWorker.close(),
     iaTaskWorker.close(),
     dionisioPipelineWorker.close(),
+    dailyReminderWorker.close(),
+    streakAlertWorker.close(),
+    cronosReminderWorker.close(),
   ])
 })
 
