@@ -81,7 +81,7 @@ async function limpiarSesiones() {
 }
 
 beforeAll(async () => {
-  vi.useFakeTimers({ now: FECHA_LUNES })
+  vi.useFakeTimers({ now: FECHA_LUNES, toFake: ['Date'] })
   app = await buildApp()
   await app.ready()
 

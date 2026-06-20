@@ -30,7 +30,7 @@ async function authGet(url: string) {
 }
 
 beforeAll(async () => {
-  vi.useFakeTimers({ now: FECHA_LUNES })
+  vi.useFakeTimers({ now: FECHA_LUNES, toFake: ['Date'] })
   app = await buildApp()
   await app.ready()
   await db.delete(usuarios).where(eq(usuarios.email, EMAIL))
