@@ -1,5 +1,5 @@
 import { db } from '../../db/index.js'
-import { iaConfig } from '../../db/schema/ia.js'
+import { iaConfig, usuarioAchievements } from '../../db/schema/ia.js'
 import { michelinRecetas } from '../../db/schema/contenido.js'
 import { alejandriLibros } from '../../db/schema/contenido.js'
 import { nemesisJuegos } from '../../db/schema/contenido.js'
@@ -121,12 +121,19 @@ export async function sugerirLogros(usuarioId: string) {
   const memoryDir = await ensureMemoryDir(usuarioId)
   const resumen = await compilarResumen7Dias(usuarioId)
 
+  const desbloqueados = await db
+    .select({ nombre: usuarioAchievements.nombre })
+    .from(usuarioAchievements)
+    .where(and(eq(usuarioAchievements.usuarioId, usuarioId), eq(usuarioAchievements.desbloqueado, true)))
+  const nombresDesbloqueados = desbloqueados.map(r => r.nombre)
+
   const prompt = `Eres el motor de logros de NEURAX, un sistema de vida gamificado.
 
 Contexto del usuario (últimos 7 días):
 ${resumen}
+${nombresDesbloqueados.length ? `\nLogros ya desbloqueados (NO sugerir estos): ${nombresDesbloqueados.join(', ')}` : ''}
 
-Sugiere exactamente 3 logros desbloqueables para este usuario. Responde ÚNICAMENTE con JSON válido, sin texto adicional:
+Sugiere exactamente 3 logros desbloqueables que el usuario AÚN NO tiene. Responde ÚNICAMENTE con JSON válido, sin texto adicional:
 [
   { "nombre": "...", "descripcion": "...", "criterio_medible": "...", "xp_sugerido": 50 },
   { "nombre": "...", "descripcion": "...", "criterio_medible": "...", "xp_sugerido": 75 },
@@ -135,10 +142,14 @@ Sugiere exactamente 3 logros desbloqueables para este usuario. Responde ÚNICAME
 
   const sugerencias = await invokeCLI(prompt, memoryDir) as Array<Record<string, unknown>>
 
-  const entrada = `\n## Sesión ${new Date().toISOString()}\nResumen: ${resumen.split('\n')[0]}\nLogros sugeridos: ${Array.isArray(sugerencias) ? sugerencias.map(s => s.nombre).join(', ') : 'N/A'}`
+  const filtered = Array.isArray(sugerencias)
+    ? sugerencias.filter(s => !nombresDesbloqueados.includes(s.nombre as string)).slice(0, 3)
+    : []
+
+  const entrada = `\n## Sesión ${new Date().toISOString()}\nResumen: ${resumen.split('\n')[0]}\nLogros sugeridos: ${filtered.map(s => s.nombre).join(', ')}`
   await actualizarMemoriaUsuario(usuarioId, 'historial_resumen', entrada, 'append')
 
-  return Array.isArray(sugerencias) ? sugerencias.slice(0, 3) : []
+  return filtered
 }
 
 export async function sugerirMisiones(usuarioId: string) {
