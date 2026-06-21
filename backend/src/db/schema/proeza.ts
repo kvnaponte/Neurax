@@ -11,6 +11,7 @@ export const proeza_canciones = pgTable('proeza_canciones', {
   año: integer('año'),
   estado: varchar('estado', { length: 20 }).default('pendiente').notNull(),
   rating: decimal('rating', { precision: 3, scale: 1 }),
+  beatmaker: varchar('beatmaker', { length: 255 }),
   notas: text('notas'),
   fecha_descubrimiento: date('fecha_descubrimiento'),
   fecha_objetivo_lanzamiento: date('fecha_objetivo_lanzamiento'),

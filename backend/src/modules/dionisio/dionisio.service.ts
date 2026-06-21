@@ -58,13 +58,11 @@ export function makeDionisioService(db: DB) {
           break
         }
         case 'michelin': {
-          // url_referencia and foto_url stored in notas — these fields don't exist in schema
-          const notas = [video.url && `Ref: ${video.url}`, video.thumbnail_url && `Foto: ${video.thumbnail_url}`]
-            .filter(Boolean).join('\n') || null
           const [row] = await db.insert(michelin_recetas).values({
             usuario_id: usuarioId,
             nombre: titulo,
-            notas,
+            url_referencia: video.url ?? null,
+            foto_url: video.thumbnail_url ?? null,
           }).returning({ id: michelin_recetas.id })
           refId = row.id
           break
@@ -88,11 +86,10 @@ export function makeDionisioService(db: DB) {
           break
         }
         case 'nemesis': {
-          const notas = video.thumbnail_url ? `cover: ${video.thumbnail_url}` : null
           const [row] = await db.insert(nemesis_juegos).values({
             usuario_id: usuarioId,
             titulo,
-            notas,
+            cover_url: video.thumbnail_url ?? null,
           }).returning({ id: nemesis_juegos.id })
           refId = row.id
           break
@@ -107,11 +104,10 @@ export function makeDionisioService(db: DB) {
           break
         }
         case 'proeza': {
-          const notas = data.beatmaker ? `beatmaker: ${data.beatmaker}` : null
           const [row] = await db.insert(proeza_canciones).values({
             usuario_id: usuarioId,
             titulo,
-            notas,
+            beatmaker: data.beatmaker ?? null,
           }).returning({ id: proeza_canciones.id })
           refId = row.id
           break

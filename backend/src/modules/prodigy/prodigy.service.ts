@@ -45,29 +45,41 @@ export function makeProdigyService(db: DB) {
         const fechaStr = cursor.toISOString().slice(0, 10)
         const slots = await cronosService.obtenerDisponibilidad(usuarioId, fechaStr)
 
-        for (const slot of slots) {
-          if (minutosRestantes <= 0) break
-          const inicio = new Date(slot.inicio)
-          const fin = new Date(inicio.getTime() + BLOCK_MINUTES * 60_000)
+        // Merge consecutive 30-min slots into windows long enough for a 50-min block
+        let i = 0
+        while (i < slots.length && minutosRestantes > 0) {
+          const windowStart = new Date(slots[i].inicio)
 
-          // Only use the slot if it fits within the available window
-          if (fin > new Date(slot.fin)) continue
-
-          try {
-            await cronosService.crearEvento(usuarioId, {
-              titulo: `Estudio: ${curso.titulo}`,
-              tipo: 'estudio',
-              inicio_at: inicio,
-              fin_at: fin,
-              prioridad: 2,
-              seccion_origen: 'prodigy',
-              seccion_ref_id: cursoId,
-            })
-            bloques_creados++
-            minutosRestantes -= BLOCK_MINUTES
-          } catch {
-            // Skip overlapping slot
+          // Find how many consecutive slots follow
+          let windowEnd = new Date(slots[i].fin)
+          let j = i + 1
+          while (j < slots.length) {
+            const nextStart = new Date(slots[j].inicio)
+            if (nextStart.getTime() === windowEnd.getTime()) {
+              windowEnd = new Date(slots[j].fin)
+              j++
+            } else break
           }
+
+          const windowMinutes = (windowEnd.getTime() - windowStart.getTime()) / 60_000
+          if (windowMinutes >= BLOCK_MINUTES) {
+            const fin = new Date(windowStart.getTime() + BLOCK_MINUTES * 60_000)
+            try {
+              await cronosService.crearEvento(usuarioId, {
+                titulo: `Estudio: ${curso.titulo}`,
+                tipo: 'estudio',
+                inicio_at: windowStart,
+                fin_at: fin,
+                prioridad: 2,
+                seccion_origen: 'prodigy',
+                seccion_ref_id: cursoId,
+              })
+              bloques_creados++
+              minutosRestantes -= BLOCK_MINUTES
+            } catch { /* skip conflicting slot */ }
+          }
+
+          i = j  // advance past this window
         }
 
         cursor.setUTCDate(cursor.getUTCDate() + 1)

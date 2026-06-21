@@ -36,6 +36,13 @@
       "when": 1782010846612,
       "tag": "0004_noisy_stone_men",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782013265921,
+      "tag": "0005_flimsy_warhawk",
+      "breakpoints": true
     }
   ]
 }
