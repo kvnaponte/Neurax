@@ -2,7 +2,7 @@ import { and, eq, gte, lte, lt, gt, isNull, asc, sql, ne } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../db/schema'
 import { cronos_eventos, usuarios, xp_events } from '../../db/schema'
-import { getIo } from '../../shared/io'
+import { emitToUser } from '../../shared/io'
 import { makeEnergiaService } from './energia.service'
 
 type DB = PostgresJsDatabase<typeof schema>
@@ -64,7 +64,7 @@ export function makeCronosService(db: DB) {
     }).returning()
 
     await energiaService.propagarEnergiaDelDia(usuarioId, fechaStr(data.inicio_at))
-    getIo()?.to(usuarioId).emit('cronos:event_updated', { action: 'created', evento_id: evento.id })
+    emitToUser(usuarioId, 'cronos:event_updated',{ action: 'created', evento_id: evento.id })
 
     return evento
   }
@@ -145,7 +145,7 @@ export function makeCronosService(db: DB) {
     }
 
     await energiaService.propagarEnergiaDelDia(usuarioId, fechaStr(nuevoInicio))
-    getIo()?.to(usuarioId).emit('cronos:event_updated', { action: 'moved', evento_id: eventoId })
+    emitToUser(usuarioId, 'cronos:event_updated',{ action: 'moved', evento_id: eventoId })
   }
 
   async function completarEvento(usuarioId: string, eventoId: string) {
@@ -190,7 +190,7 @@ export function makeCronosService(db: DB) {
           .where(eq(usuarios.id, usuarioId))
 
         xpDelta = penalizacion
-        getIo()?.to(usuarioId).emit('xp:updated', { xp_delta: penalizacion })
+        emitToUser(usuarioId, 'xp:updated', { xp_delta: penalizacion })
       }
     }
 
@@ -271,7 +271,7 @@ export function makeCronosService(db: DB) {
       .returning()
 
     await energiaService.propagarEnergiaDelDia(usuarioId, fechaStr(inicio))
-    getIo()?.to(usuarioId).emit('cronos:event_updated', { action: 'updated', evento_id: eventoId })
+    emitToUser(usuarioId, 'cronos:event_updated',{ action: 'updated', evento_id: eventoId })
 
     return updated
   }
@@ -290,7 +290,7 @@ export function makeCronosService(db: DB) {
       .where(eq(cronos_eventos.id, eventoId))
 
     await energiaService.propagarEnergiaDelDia(usuarioId, fechaStr(existing.inicio_at))
-    getIo()?.to(usuarioId).emit('cronos:event_updated', { action: 'deleted', evento_id: eventoId })
+    emitToUser(usuarioId, 'cronos:event_updated',{ action: 'deleted', evento_id: eventoId })
   }
 
   return {

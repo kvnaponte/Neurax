@@ -2,7 +2,7 @@ import { eq, and, isNull, gte, lt, count, sum } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../db/schema'
 import { usuario_achievements, actividades, usuarios, cronos_eventos } from '../../db/schema'
-import { getIo } from '../../shared/io'
+import { emitToUser, getIo } from '../../shared/io'
 import { ACHIEVEMENTS_CATALOG, TIPOS_REQUERIDOS, getCatalogEntry } from './achievements.catalog'
 import type { RachaService } from './racha.service'
 import { crearNotificacion } from '../notifications/notifications.service'
@@ -134,7 +134,7 @@ export function makeLogrosService(db: DB, rachaService: RachaService, otorgarXP:
 
           await otorgarXP({ usuarioId, xpBase: catalogEntry.xp, bonusHorario: 1, fuente: 'achievement', fuenteId: logro.id })
 
-          getIo()?.to(usuarioId).emit('achievement:unlocked', {
+          emitToUser(usuarioId, 'achievement:unlocked', {
             achievement_id: catalogEntry.id,
             nombre: catalogEntry.nombre,
             xp: catalogEntry.xp,
@@ -182,7 +182,7 @@ export function makeLogrosService(db: DB, rachaService: RachaService, otorgarXP:
 
       await otorgarXP({ usuarioId, xpBase: logro.xp_otorgado, bonusHorario: 1, fuente: 'achievement', fuenteId: achievementId })
 
-      getIo()?.to(usuarioId).emit('achievement:unlocked', {
+      emitToUser(usuarioId, 'achievement:unlocked', {
         achievement_id: logro.achievement_id,
         nombre: logro.nombre,
         xp: logro.xp_otorgado,

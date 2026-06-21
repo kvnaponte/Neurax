@@ -4,3 +4,7 @@ let _io: Server | null = null
 
 export function setIo(io: Server): void { _io = io }
 export function getIo(): Server | null { return _io }
+
+export function emitToUser(userId: string, event: string, data: unknown): void {
+  _io?.to(`user:${userId}`).emit(event, data)
+}

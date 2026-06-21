@@ -2,7 +2,7 @@ import { and, eq, gte, lte, lt, isNull, notInArray, sql, desc, asc, count } from
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../db/schema'
 import { odin_misiones_catalogo, odin_misiones_usuario, odin_cofres, actividades, usuarios } from '../../db/schema'
-import { getIo } from '../../shared/io'
+import { emitToUser, getIo } from '../../shared/io'
 import { makeXpService } from '../gamification/xp.service'
 import { getCatalogMap } from './odin.catalog'
 import { crearNotificacion } from '../notifications/notifications.service'
@@ -202,7 +202,7 @@ export function makeOdinService(db: DB) {
 
       if (seCompleta) {
         await xpService.otorgarXP({ usuarioId, xpBase: mision.xp_reward, bonusHorario: 1.0, bonusRacha: 1.0, fuente: 'odin_mision', fuenteId: mision.id })
-        getIo()?.to(usuarioId).emit('mission:completed', { mision_id: mision.id, nombre: mision.nombre, xp: mision.xp_reward })
+        emitToUser(usuarioId, 'mission:completed', { mision_id: mision.id, nombre: mision.nombre, xp: mision.xp_reward })
       }
     }
 
@@ -238,7 +238,7 @@ export function makeOdinService(db: DB) {
 
     await db.insert(odin_cofres).values({ usuario_id: usuarioId, tipo, semana_numero: semana, xp_otorgado: xpCofre })
     await xpService.otorgarXP({ usuarioId, xpBase: xpCofre, bonusHorario: 1.0, bonusRacha: 1.0, fuente: 'odin_cofre' })
-    getIo()?.to(usuarioId).emit('cofre:unlocked', { tipo, xp: xpCofre, semana })
+    emitToUser(usuarioId, 'cofre:unlocked', { tipo, xp: xpCofre, semana })
     await crearNotificacion(db, getIo(), usuarioId, {
       tipo: 'cofre_epico',
       titulo: `¡Cofre ${tipo} desbloqueado!`,

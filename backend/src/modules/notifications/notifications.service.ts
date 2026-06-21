@@ -5,6 +5,7 @@ import webpush from 'web-push'
 import type * as schema from '../../db/schema'
 import { notificaciones, notificaciones_config } from '../../db/schema'
 import { notificationsQueue } from '../../jobs/queues.js'
+import { emitToUser } from '../../shared/io.js'
 
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
@@ -57,7 +58,7 @@ function isInNoMolestarWindow(inicio: string | null, fin: string | null): boolea
 
 export async function crearNotificacion(
   db: DB,
-  io: Server | null,
+  _io: Server | null,
   usuarioId: string,
   opts: { tipo: string; titulo: string; mensaje: string; data?: Record<string, unknown> },
 ): Promise<void> {
@@ -69,7 +70,7 @@ export async function crearNotificacion(
     data: opts.data ?? {},
   }).returning({ id: notificaciones.id })
 
-  io?.to(usuarioId).emit('notification:new', {
+  emitToUser(usuarioId, 'notification:new', {
     id: notif.id,
     tipo: opts.tipo,
     titulo: opts.titulo,

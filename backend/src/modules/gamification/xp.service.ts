@@ -2,10 +2,11 @@ import { eq, sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../db/schema'
 import { usuarios, xp_events } from '../../db/schema'
-import { getIo } from '../../shared/io'
+import { emitToUser } from '../../shared/io'
 import { calcularBonusRacha, calcularNivel, calcularXPFinal } from '../../shared/xp.utils'
 import { makeRachaService } from './racha.service'
 import { makeLogrosService } from './logros.service'
+import { getNivelInfo } from './gamification.constants'
 
 type DB = PostgresJsDatabase<typeof schema>
 
@@ -60,10 +61,16 @@ export function makeXpService(db: DB) {
 
     if (subioNivel) {
       await db.update(usuarios).set({ nivel: nivelNuevo }).where(eq(usuarios.id, usuarioId))
-      getIo()?.to(usuarioId).emit('level:up', { nivel: nivelNuevo, xp_total: xpTotalNuevo })
+      const nivelInfo = getNivelInfo(nivelNuevo)
+      emitToUser(usuarioId, 'level:up', {
+        nivel_anterior: nivelAnterior,
+        nivel_nuevo: nivelNuevo,
+        nombre_nivel: nivelInfo.nombre,
+        color_nivel: nivelInfo.color,
+      })
     }
 
-    getIo()?.to(usuarioId).emit('xp:updated', { xp_total: xpTotalNuevo, nivel: nivelNuevo, xp_delta: xpFinal })
+    emitToUser(usuarioId, 'xp:updated', { xp_total: xpTotalNuevo, nivel: nivelNuevo, xp_delta: xpFinal })
 
     return { xp_otorgado: xpFinal, nivel_nuevo: nivelNuevo, subio_nivel: subioNivel }
   }

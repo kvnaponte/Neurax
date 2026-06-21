@@ -2,6 +2,7 @@ import { eq, and, asc, desc } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../db/schema'
 import { rachas } from '../../db/schema'
+import { emitToUser } from '../../shared/io'
 
 type DB = PostgresJsDatabase<typeof schema>
 
@@ -22,7 +23,7 @@ function nextDate(dateStr: string): string {
 }
 
 export function makeRachaService(db: DB) {
-  return {
+  const service = {
     async marcarActividadDelDia(usuarioId: string, fecha: string): Promise<void> {
       await db.insert(rachas)
         .values({ usuario_id: usuarioId, fecha, tiene_actividad: true })
@@ -30,6 +31,11 @@ export function makeRachaService(db: DB) {
           target: [rachas.usuario_id, rachas.fecha],
           set: { tiene_actividad: true },
         })
+      const [racha_actual, mejor_racha] = await Promise.all([
+        service.calcularRachaActual(usuarioId),
+        service.calcularMejorRacha(usuarioId),
+      ])
+      emitToUser(usuarioId, 'streak:updated', { racha_actual, mejor_racha })
     },
 
     async calcularRachaActual(usuarioId: string): Promise<number> {
@@ -94,6 +100,7 @@ export function makeRachaService(db: DB) {
       return result.length === 0 || !result[0].tiene_actividad
     },
   }
+  return service
 }
 
 export type RachaService = ReturnType<typeof makeRachaService>
