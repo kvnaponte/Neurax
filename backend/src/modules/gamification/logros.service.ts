@@ -15,6 +15,7 @@ export interface OtorgarXPInput {
   bonusHorario: number
   fuente: string
   fuenteId?: string
+  _depth?: number
 }
 
 type OtorgarXPFn = (params: OtorgarXPInput) => Promise<any>
@@ -113,7 +114,7 @@ export function makeLogrosService(db: DB, rachaService: RachaService, otorgarXP:
   }
 
   return {
-    async verificarLogros(usuarioId: string): Promise<void> {
+    async verificarLogros(usuarioId: string, _depth = 0): Promise<void> {
       const pendientes = await db.select().from(usuario_achievements)
         .where(and(eq(usuario_achievements.usuario_id, usuarioId), eq(usuario_achievements.desbloqueado, false), eq(usuario_achievements.tipo, 'sistema')))
 
@@ -132,7 +133,7 @@ export function makeLogrosService(db: DB, rachaService: RachaService, otorgarXP:
             .set({ desbloqueado: true, desbloqueado_at: new Date(), xp_otorgado: catalogEntry.xp })
             .where(eq(usuario_achievements.id, logro.id))
 
-          await otorgarXP({ usuarioId, xpBase: catalogEntry.xp, bonusHorario: 1, fuente: 'achievement', fuenteId: logro.id })
+          await otorgarXP({ usuarioId, xpBase: catalogEntry.xp, bonusHorario: 1, fuente: 'achievement', fuenteId: logro.id, _depth })
 
           emitToUser(usuarioId, 'achievement:unlocked', {
             achievement_id: catalogEntry.id,

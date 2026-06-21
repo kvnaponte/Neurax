@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, integer, decimal, timestamp, date, index } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, text, integer, decimal, timestamp, date, index, boolean } from 'drizzle-orm/pg-core'
 import { usuarios } from './core'
 
 export const proeza_canciones = pgTable('proeza_canciones', {
@@ -13,6 +13,8 @@ export const proeza_canciones = pgTable('proeza_canciones', {
   rating: decimal('rating', { precision: 3, scale: 1 }),
   notas: text('notas'),
   fecha_descubrimiento: date('fecha_descubrimiento'),
+  fecha_objetivo_lanzamiento: date('fecha_objetivo_lanzamiento'),
+  cronos_sincronizado: boolean('cronos_sincronizado').default(false).notNull(),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   deleted_at: timestamp('deleted_at', { withTimezone: true }),

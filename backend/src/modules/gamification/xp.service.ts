@@ -10,19 +10,22 @@ import { getNivelInfo } from './gamification.constants'
 
 type DB = PostgresJsDatabase<typeof schema>
 
+const MAX_XP_RECURSION_DEPTH = 3
+
 export interface OtorgarXPInput {
   usuarioId: string
   xpBase: number
   bonusHorario: number
-  bonusRacha?: number  // override; if omitted, calculated from current streak
+  bonusRacha?: number
   fuente: string
   fuenteId?: string
+  _depth?: number  // internal recursion guard — callers should not set this
 }
 
 export function makeXpService(db: DB) {
   const rachaService = makeRachaService(db)
 
-  async function grantXP({ usuarioId, xpBase, bonusHorario, bonusRacha: rachaOverride, fuente, fuenteId }: OtorgarXPInput) {
+  async function grantXP({ usuarioId, xpBase, bonusHorario, bonusRacha: rachaOverride, fuente, fuenteId, _depth }: OtorgarXPInput) {
     let bonusRacha = rachaOverride
     if (bonusRacha === undefined) {
       const diasRacha = await rachaService.calcularRachaActual(usuarioId)
@@ -72,6 +75,11 @@ export function makeXpService(db: DB) {
 
     emitToUser(usuarioId, 'xp:updated', { xp_total: xpTotalNuevo, nivel: nivelNuevo, xp_delta: xpFinal })
 
+    const depth = _depth ?? 0
+    if (depth < MAX_XP_RECURSION_DEPTH) {
+      await logrosService.verificarLogros(usuarioId, depth + 1)
+    }
+
     return { xp_otorgado: xpFinal, nivel_nuevo: nivelNuevo, subio_nivel: subioNivel }
   }
 
@@ -79,12 +87,7 @@ export function makeXpService(db: DB) {
 
   return {
     async otorgarXP(params: OtorgarXPInput) {
-      const result = await grantXP(params)
-      // No verificar logros cuando la fuente es un achievement (evita recursión)
-      if (params.fuente !== 'achievement') {
-        await logrosService.verificarLogros(params.usuarioId)
-      }
-      return result
+      return grantXP(params)
     },
     logrosService,
   }
