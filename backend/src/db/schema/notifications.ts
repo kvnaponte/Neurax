@@ -20,6 +20,7 @@ export const notificaciones_config = pgTable('notificaciones_config', {
   hora_recordatorio: time('hora_recordatorio'),
   push_token: text('push_token'),
   push_type: varchar('push_type', { length: 20 }), // expo/web
+  web_push_subscription: jsonb('web_push_subscription'), // { endpoint, keys: { p256dh, auth } }
   no_molestar_inicio: time('no_molestar_inicio'),
   no_molestar_fin: time('no_molestar_fin'),
   toggles: jsonb('toggles'),

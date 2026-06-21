@@ -1,0 +1,1 @@
+ALTER TABLE "notificaciones_config" ADD COLUMN "web_push_subscription" jsonb;

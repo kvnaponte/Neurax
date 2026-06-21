@@ -1,9 +1,18 @@
 import { eq, desc, and } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { Server } from 'socket.io'
+import webpush from 'web-push'
 import type * as schema from '../../db/schema'
 import { notificaciones, notificaciones_config } from '../../db/schema'
 import { notificationsQueue } from '../../jobs/queues.js'
+
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT ?? 'mailto:admin@neurax.app',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY,
+  )
+}
 
 type DB = PostgresJsDatabase<typeof schema>
 
@@ -103,9 +112,31 @@ export async function enviarPush(db: DB, usuarioId: string, notificacionId: stri
   if (config.push_type === 'expo') {
     await sendExpoPush(config.push_token, notif.titulo, notif.mensaje)
   } else if (config.push_type === 'web') {
-    // Web Push requires the `web-push` npm package with VAPID keys.
-    // Install it and configure VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY env vars to enable.
-    console.warn('[Notifications] Web push skipped: web-push package not installed')
+    const sub = config.web_push_subscription as { endpoint: string; keys: { p256dh: string; auth: string } } | null
+    if (sub?.endpoint) await sendWebPush(sub, notif.titulo, notif.mensaje)
+  }
+}
+
+async function sendWebPush(
+  subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
+  title: string,
+  body: string,
+): Promise<void> {
+  if (!process.env.VAPID_PUBLIC_KEY) {
+    console.warn('[Notifications] Web push skipped: VAPID keys not configured')
+    return
+  }
+  try {
+    await webpush.sendNotification(
+      subscription,
+      JSON.stringify({ title, body }),
+    )
+  } catch (err: any) {
+    if (err.statusCode === 410 || err.statusCode === 404) {
+      console.warn('[Notifications] Web push subscription expired:', subscription.endpoint)
+    } else {
+      console.error('[Notifications] Web push failed:', err.message)
+    }
   }
 }
 

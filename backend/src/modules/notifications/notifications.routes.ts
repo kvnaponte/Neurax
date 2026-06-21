@@ -26,12 +26,25 @@ const ConfigSchema = z.object({
   toggles: z.record(z.boolean()).optional(),
 })
 
-const PushTokenSchema = z.object({
-  push_type: z.enum(['expo', 'web']),
-  push_token: z.string().optional(),
+const WebPushSubscriptionSchema = z.object({
+  endpoint: z.string().url(),
+  keys: z.object({
+    p256dh: z.string(),
+    auth: z.string(),
+  }),
 })
 
+const PushTokenSchema = z.discriminatedUnion('push_type', [
+  z.object({ push_type: z.literal('expo'), push_token: z.string() }),
+  z.object({ push_type: z.literal('web'), web_push_subscription: WebPushSubscriptionSchema }),
+])
+
 const notificationsPlugin: FastifyPluginAsync = async (fastify) => {
+  // GET /api/notifications/vapid-public-key  (público — la web app lo necesita para suscribirse)
+  fastify.get('/vapid-public-key', async (_req, reply) => {
+    return reply.send({ publicKey: process.env.VAPID_PUBLIC_KEY ?? null })
+  })
+
   // GET /api/notifications
   fastify.get('/', { preHandler: requireAccess }, async (req, reply) => {
     const { userId } = req.user as any
@@ -85,18 +98,15 @@ const notificationsPlugin: FastifyPluginAsync = async (fastify) => {
     const { userId } = req.user as any
     const body = PushTokenSchema.parse(req.body)
 
+    const values = body.push_type === 'expo'
+      ? { push_type: 'expo' as const, push_token: body.push_token, web_push_subscription: null }
+      : { push_type: 'web' as const, push_token: null, web_push_subscription: body.web_push_subscription }
+
     await db.insert(notificaciones_config)
-      .values({
-        usuario_id: userId,
-        push_type: body.push_type,
-        push_token: body.push_token ?? null,
-      })
+      .values({ usuario_id: userId, ...values })
       .onConflictDoUpdate({
         target: notificaciones_config.usuario_id,
-        set: {
-          push_type: body.push_type,
-          push_token: body.push_token ?? null,
-        },
+        set: values,
       })
 
     return reply.send({ ok: true })
