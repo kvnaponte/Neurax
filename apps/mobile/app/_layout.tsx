@@ -3,6 +3,7 @@ import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
+import { GlobalOverlays } from '@/providers/GlobalOverlays'
 
 // Mantener el splash visible hasta que las fuentes Cinzel estén cargadas
 SplashScreen.preventAutoHideAsync()
@@ -36,6 +37,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
       </Stack>
+      <GlobalOverlays />
     </>
   )
 }
