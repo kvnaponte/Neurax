@@ -1,0 +1,25 @@
+export const colors = {
+  gold: { 100: '#fde68a', 200: '#fbbf24', 300: '#f59e0b', 400: '#b45309' },
+  purple: { 100: '#c084fc', 200: '#a855f7', 300: '#7c3aed', 400: '#6d28d9' },
+  bg: { 900: '#04050f', 800: '#07061a', 700: '#0d0c24', 600: '#11122a', 500: '#14152e' },
+  text: '#e2e8f0',
+  textDim: '#94a3b8',
+  textMute: '#475569',
+  border: 'rgba(124,58,237,0.3)',
+  borderStrong: 'rgba(124,58,237,0.6)',
+  energia: { 0: '#ef4444', 25: '#f97316', 50: '#eab308', 75: '#86efac', 100: '#22c55e' },
+  niveles: {
+    1: '#34d399',
+    2: '#fb923c',
+    3: '#a855f7',
+    4: '#60a5fa',
+    5: '#f472b6',
+    6: '#fbbf24',
+  } as Record<number, string>,
+  areas: {
+    rutinarias: '#818cf8',
+    fisicas: '#fb923c',
+    economicas: '#60a5fa',
+    otras: '#34d399',
+  },
+} as const
