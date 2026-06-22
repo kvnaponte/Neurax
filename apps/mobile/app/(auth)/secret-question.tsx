@@ -15,8 +15,6 @@ import Animated, {
   withSequence,
   withDelay,
   runOnJS,
-  interpolate,
-  Extrapolation,
 } from 'react-native-reanimated'
 import Svg, { Defs, LinearGradient, Stop, Line } from 'react-native-svg'
 import { colors, spacing } from '@/theme'
@@ -31,6 +29,7 @@ const BLOCK_MINUTES = 15
 export default function SecretQuestionScreen() {
   const [answer, setAnswer] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [attemptsLeft, setAttemptsLeft] = useState(MAX_ATTEMPTS)
   const [blocked, setBlocked] = useState(false)
@@ -46,7 +45,6 @@ export default function SecretQuestionScreen() {
   const logoOpacity = useSharedValue(0)
   const logoScale = useSharedValue(0.8)
   const screenOpacity = useSharedValue(1)
-  const animating = useSharedValue(0)
 
   const { secretQuestion, accessToken, setAccessToken } = useAuthStore()
 
@@ -77,8 +75,6 @@ export default function SecretQuestionScreen() {
   }
 
   const startDimensionSplit = () => {
-    animating.value = 1
-
     // Phase 1 (0-0.4s): Golden glow pulses
     glowOpacity.value = withTiming(1, { duration: 400 })
     glowScale.value = withTiming(1.5, { duration: 400 })
@@ -104,12 +100,13 @@ export default function SecretQuestionScreen() {
   }
 
   const handleSubmit = async () => {
-    if (!answer.trim() || loading || blocked) return
+    if (!answer.trim() || loading || blocked || isAnimating) return
     setError(null)
     setLoading(true)
     try {
       const data = await api.auth.verifySecret(answer.trim(), accessToken!)
       setAccessToken(data.access_token)
+      setIsAnimating(true)
       startDimensionSplit()
     } catch (err: any) {
       if (err.statusCode === 429) {
@@ -239,6 +236,7 @@ export default function SecretQuestionScreen() {
             autoCorrect={false}
             returnKeyType="done"
             onSubmitEditing={handleSubmit}
+            editable={!isAnimating}
           />
 
           {error && <Text style={styles.errorText}>{error}</Text>}
@@ -251,7 +249,7 @@ export default function SecretQuestionScreen() {
             label="Confirmar identidad"
             onPress={handleSubmit}
             loading={loading}
-            disabled={loading}
+            disabled={loading || isAnimating}
           />
         </View>
       </View>

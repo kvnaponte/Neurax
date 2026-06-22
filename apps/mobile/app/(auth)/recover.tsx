@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -15,21 +15,21 @@ import { colors, spacing } from '@/theme'
 import { PrimaryButton, StarField } from '@/components/ui'
 import { api } from '@/lib/api'
 
-// The backend verifyRecovery requires both answers at once.
+// Backend verifyRecovery requires both answers at once.
 // We collect them in two sequential steps, then submit both together.
 
-type Step = 'question1' | 'question2' | 'newPassword' | 'success'
+type Step = 'email' | 'question1' | 'question2' | 'newPassword' | 'success'
 
 const BLOCK_MINUTES = 30
 
 export default function RecoverScreen() {
-  const [step, setStep] = useState<Step>('question1')
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const [step, setStep] = useState<Step>('email')
+  const [email, setEmail] = useState('')
   const [answer1, setAnswer1] = useState('')
   const [answer2, setAnswer2] = useState('')
-  const [userId, setUserId] = useState('')
   const [recoveryToken, setRecoveryToken] = useState('')
-  const [question1, setQuestion1] = useState<string>('')
-  const [question2, setQuestion2] = useState<string>('')
 
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -48,8 +48,6 @@ export default function RecoverScreen() {
     }
   }, [])
 
-  const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null)
-
   const startBlockCountdown = () => {
     setBlocked(true)
     timerRef.current = setInterval(() => {
@@ -58,7 +56,9 @@ export default function RecoverScreen() {
           clearInterval(timerRef.current!)
           setBlocked(false)
           setAttemptsLeft(2)
-          setStep('question1')
+          setStep('email')
+          setAnswer1('')
+          setAnswer2('')
           return BLOCK_MINUTES * 60
         }
         return prev - 1
@@ -66,14 +66,20 @@ export default function RecoverScreen() {
     }, 1000)
   }
 
-  const handleNextStep1 = () => {
+  const handleEmailNext = () => {
+    if (!email.trim() || !email.includes('@')) {
+      setError('Ingresa un email válido')
+      return
+    }
+    setError(null)
+    setStep('question1')
+  }
+
+  const handleQuestion1Next = () => {
     if (!answer1.trim()) {
       setError('Ingresa tu respuesta')
       return
     }
-    // We need a userId to call verifyRecovery. Ask the user for their email first.
-    // BUT looking at the backend, verifyRecovery needs userId + answer1 + answer2 together.
-    // We collect both answers before making the API call.
     setError(null)
     setStep('question2')
   }
@@ -83,15 +89,11 @@ export default function RecoverScreen() {
       setError('Ingresa tu respuesta')
       return
     }
-    if (!userId.trim()) {
-      setError('Se requiere el ID de usuario')
-      return
-    }
     setError(null)
     setLoading(true)
     try {
       const data = await api.auth.recoverVerify({
-        userId,
+        email: email.trim().toLowerCase(),
         answer1: answer1.trim(),
         answer2: answer2.trim(),
       })
@@ -115,7 +117,7 @@ export default function RecoverScreen() {
 
   const handleReset = async () => {
     if (!newPassword || newPassword !== confirmPassword) {
-      setError('Las contraseñas no coinciden o están vacías')
+      setError('Las contraseñas no coinciden')
       return
     }
     if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
@@ -139,6 +141,9 @@ export default function RecoverScreen() {
     const s = (secs % 60).toString().padStart(2, '0')
     return `${m}:${s}`
   }
+
+  const stepNumber = step === 'email' ? 0 : step === 'question1' ? 1 : step === 'question2' ? 2 : 3
+  const totalSteps = 3
 
   if (blocked) {
     return (
@@ -190,7 +195,17 @@ export default function RecoverScreen() {
           {/* Back button */}
           <TouchableOpacity
             style={styles.backBtn}
-            onPress={() => router.back()}
+            onPress={() => {
+              if (step === 'email') {
+                router.back()
+              } else if (step === 'question1') {
+                setError(null)
+                setStep('email')
+              } else if (step === 'question2') {
+                setError(null)
+                setStep('question1')
+              }
+            }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <ChevronLeft size={24} color={colors.gold[200]} />
@@ -199,21 +214,46 @@ export default function RecoverScreen() {
           <Text style={styles.logo}>NEURAX</Text>
           <Text style={styles.pageTitle}>Recuperar acceso</Text>
 
-          {step === 'question1' && (
-            <View style={styles.form}>
-              <Text style={styles.stepLabel}>Paso 1 de 2</Text>
+          {/* Progress indicator */}
+          {stepNumber > 0 && (
+            <View style={styles.progressRow}>
+              {Array.from({ length: totalSteps }).map((_, i) => (
+                <View
+                  key={i}
+                  style={[styles.progressDot, i < stepNumber && styles.progressDotActive]}
+                />
+              ))}
+            </View>
+          )}
 
-              {/* userId input — in a real app, user would enter email and backend resolves userId */}
+          {step === 'email' && (
+            <View style={styles.form}>
+              <Text style={styles.hint}>
+                Ingresa el email de tu cuenta para continuar con la recuperación.
+              </Text>
+
               <TextInput
                 style={styles.input}
-                placeholder="ID de usuario (userId)"
+                placeholder="tu@email.com"
                 placeholderTextColor={colors.textMute}
-                value={userId}
-                onChangeText={setUserId}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                returnKeyType="next"
+                returnKeyType="done"
+                onSubmitEditing={handleEmailNext}
               />
+
+              {error && <Text style={styles.errorText}>{error}</Text>}
+
+              <PrimaryButton label="Continuar" onPress={handleEmailNext} />
+            </View>
+          )}
+
+          {step === 'question1' && (
+            <View style={styles.form}>
+              <Text style={styles.stepLabel}>Pregunta 1 de 2</Text>
 
               <View style={styles.questionBox}>
                 <Text style={styles.question}>
@@ -230,7 +270,7 @@ export default function RecoverScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="done"
-                onSubmitEditing={handleNextStep1}
+                onSubmitEditing={handleQuestion1Next}
               />
 
               {error && <Text style={styles.errorText}>{error}</Text>}
@@ -239,13 +279,13 @@ export default function RecoverScreen() {
                 {attemptsLeft} {attemptsLeft === 1 ? 'intento restante' : 'intentos restantes'}
               </Text>
 
-              <PrimaryButton label="Siguiente" onPress={handleNextStep1} />
+              <PrimaryButton label="Siguiente" onPress={handleQuestion1Next} />
             </View>
           )}
 
           {step === 'question2' && (
             <View style={styles.form}>
-              <Text style={styles.stepLabel}>Paso 2 de 2</Text>
+              <Text style={styles.stepLabel}>Pregunta 2 de 2</Text>
 
               <View style={styles.questionBox}>
                 <Text style={styles.question}>
@@ -372,11 +412,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textDim,
     letterSpacing: 2,
+    marginBottom: spacing.xl,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
     marginBottom: spacing['2xl'],
+  },
+  progressDot: {
+    width: 32,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.bg[600],
+  },
+  progressDotActive: {
+    backgroundColor: colors.purple[300],
   },
   form: {
     width: '100%',
     gap: spacing.md,
+  },
+  hint: {
+    fontFamily: 'Cinzel-Regular',
+    fontSize: 13,
+    color: colors.textDim,
+    textAlign: 'center',
+    lineHeight: 22,
   },
   stepLabel: {
     fontFamily: 'Cinzel-Medium',
@@ -436,7 +497,6 @@ const styles = StyleSheet.create({
     color: colors.textMute,
     textAlign: 'center',
   },
-  // Blocked / Success screens
   centered: {
     flex: 1,
     justifyContent: 'center',

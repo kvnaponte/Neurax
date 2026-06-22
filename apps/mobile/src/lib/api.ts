@@ -62,7 +62,7 @@ export const api = {
         { method: 'POST', body: JSON.stringify({ refresh_token }), token },
       ),
 
-    recoverVerify: (body: { userId: string; answer1: string; answer2: string }) =>
+    recoverVerify: (body: { email: string; answer1: string; answer2: string }) =>
       request<{ recovery_token: string; questions: [string, string] }>(
         '/auth/recover/verify',
         { method: 'POST', body: JSON.stringify(body) },

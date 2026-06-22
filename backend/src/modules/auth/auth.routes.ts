@@ -161,9 +161,14 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.post('/recover/verify', { config: { rateLimit: RATE.RECOVER_VERIFY } }, async (req, reply) => {
     try {
       const body = RecoverVerifySchema.parse(req.body)
-      await service.verifyRecovery(body.userId, body.answer1, body.answer2)
-      const recoveryToken = fastify.jwt.sign({ userId: body.userId, type: 'recovery' }, { expiresIn: '10m' })
-      audit('recover_verify', 'success', { usuarioId: body.userId, ip: getIp(req) }).catch(() => {})
+      const user = await service.repo.findByEmail(body.email)
+      if (!user || user.deleted_at) {
+        // Respond with same 401 as wrong answers to avoid email enumeration
+        throw Object.assign(new Error('Respuestas de recuperación incorrectas'), { statusCode: 401 })
+      }
+      await service.verifyRecovery(user.id, body.answer1, body.answer2)
+      const recoveryToken = fastify.jwt.sign({ userId: user.id, type: 'recovery' }, { expiresIn: '10m' })
+      audit('recover_verify', 'success', { usuarioId: user.id, ip: getIp(req) }).catch(() => {})
       return reply.send({
         recovery_token: recoveryToken,
         questions: [RECOVERY_QUESTIONS[0].question, RECOVERY_QUESTIONS[1].question],

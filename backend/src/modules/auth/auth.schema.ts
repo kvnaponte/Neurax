@@ -24,7 +24,7 @@ export const VerifySecretSchema = z.object({
 })
 
 export const RecoverVerifySchema = z.object({
-  userId: z.string().uuid(),
+  email: z.string().email(),
   answer1: z.string().trim(),
   answer2: z.string().trim(),
 })
