@@ -8,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { colors } from '@/theme'
 
-const { width: W, height: H } = Dimensions.get('window')
+const { height: H } = Dimensions.get('window')
 
 interface XPRiseProps {
   xp: number

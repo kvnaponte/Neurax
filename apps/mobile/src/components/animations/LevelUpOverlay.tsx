@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { View, Text, StyleSheet, Dimensions, Platform } from 'react-native'
 import { BlurView } from 'expo-blur'
 import Animated, {
@@ -11,7 +11,6 @@ import Animated, {
   withSequence,
 } from 'react-native-reanimated'
 import Svg, { Line, Defs, LinearGradient, Stop } from 'react-native-svg'
-import { Sword } from 'lucide-react-native'
 import { colors, spacing } from '@/theme'
 import { HexBadge } from '@/components/ui'
 import { PrimaryButton } from '@/components/ui'
@@ -30,6 +29,9 @@ interface LevelUpOverlayProps {
 }
 
 export function LevelUpOverlay({ nivel, nombreNivel, colorNivel, onClose }: LevelUpOverlayProps) {
+  // Controls touch events — false until 3s; opacity alone doesn't block touches
+  const [btnReady, setBtnReady] = useState(false)
+
   // Ray rotation (continuous, 8s per revolution)
   const rotation = useSharedValue(0)
 
@@ -43,7 +45,7 @@ export function LevelUpOverlay({ nivel, nombreNivel, colorNivel, onClose }: Leve
   const nameOpacity = useSharedValue(0)
   const nameTranslateY = useSharedValue(20)
 
-  // Button fade in after 3s
+  // Button fade in after 3s (visual only — btnReady controls touch)
   const btnOpacity = useSharedValue(0)
 
   React.useEffect(() => {
@@ -71,8 +73,12 @@ export function LevelUpOverlay({ nivel, nombreNivel, colorNivel, onClose }: Leve
     nameOpacity.value = withTiming(1, { duration: 800 })
     nameTranslateY.value = withTiming(0, { duration: 800 })
 
-    // Button appears after 3s
+    // Button appears after 3s (visual fade)
     btnOpacity.value = withDelay(3000, withTiming(1, { duration: 400 }))
+
+    // Enable touch events only after 3s
+    const timer = setTimeout(() => setBtnReady(true), 3000)
+    return () => clearTimeout(timer)
   }, [])
 
   const rayStyle = useAnimatedStyle(() => ({
@@ -161,8 +167,11 @@ export function LevelUpOverlay({ nivel, nombreNivel, colorNivel, onClose }: Leve
           Nivel {nivel}
         </Text>
 
-        {/* Continue button (visible after 3s) */}
-        <Animated.View style={[styles.btnWrap, btnStyle]}>
+        {/* Continue button — opacity animates after 3s, touches enabled only when btnReady */}
+        <Animated.View
+          style={[styles.btnWrap, btnStyle]}
+          pointerEvents={btnReady ? 'auto' : 'none'}
+        >
           <PrimaryButton
             label="Continuar la aventura"
             onPress={onClose}
