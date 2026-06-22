@@ -7,7 +7,7 @@ import {
   Platform,
 } from 'react-native'
 import { router } from 'expo-router'
-import { MMKV } from 'react-native-mmkv'
+import * as SecureStore from 'expo-secure-store'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -19,8 +19,6 @@ import Svg, { Defs, RadialGradient, Stop, Rect, LinearGradient } from 'react-nat
 import { Sword } from 'lucide-react-native'
 import { colors, text as textStyles, spacing } from '@/theme'
 import { PrimaryButton, StarField } from '@/components/ui'
-
-const storage = new MMKV()
 
 const PILLS = ['XP', 'Rachas', 'Sube', 'Logros']
 
@@ -52,8 +50,8 @@ export default function OnboardingScreen() {
     opacity: orbOpacity.value,
   }))
 
-  const handleStart = () => {
-    storage.set('onboarding_completed', 'true')
+  const handleStart = async () => {
+    await SecureStore.setItemAsync('onboarding_completed', 'true')
     router.replace('/(auth)/register')
   }
 
