@@ -12,6 +12,24 @@ export const leonidas_ejercicios_catalogo = pgTable('leonidas_ejercicios_catalog
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
+// Ejercicios/rutinas guardados por el usuario desde Dionisio (videos accionados)
+export const leonidas_referencias = pgTable('leonidas_referencias', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  usuario_id: uuid('usuario_id').notNull().references(() => usuarios.id, { onDelete: 'cascade' }),
+  nombre: varchar('nombre', { length: 500 }).notNull(),
+  url_referencia: text('url_referencia'),
+  thumbnail_url: text('thumbnail_url'),
+  grupo_muscular: varchar('grupo_muscular', { length: 100 }), // desconocido desde un video
+  estado: varchar('estado', { length: 20 }).default('pendiente').notNull(), // pendiente/probado/descartado
+  fuente: varchar('fuente', { length: 50 }).default('manual').notNull(), // manual/dionisio
+  notas: text('notas'),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  deleted_at: timestamp('deleted_at', { withTimezone: true }),
+}, (t) => ({
+  'idx_leonidas_referencias_usuario_id': index('idx_leonidas_referencias_usuario_id').on(t.usuario_id),
+}))
+
 export const leonidas_plan_semanal = pgTable('leonidas_plan_semanal', {
   id: uuid('id').defaultRandom().primaryKey(),
   usuario_id: uuid('usuario_id').notNull().references(() => usuarios.id, { onDelete: 'cascade' }),

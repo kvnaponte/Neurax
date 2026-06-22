@@ -10,6 +10,7 @@ import {
   nemesis_juegos,
   prodigy_cursos,
   proeza_canciones,
+  leonidas_referencias,
 } from '../../db/schema'
 
 type DB = PostgresJsDatabase<typeof schema>
@@ -113,9 +114,14 @@ export function makeDionisioService(db: DB) {
           break
         }
         case 'leonidas': {
-          // Leonidas doesn't have a direct text-only record — store as note via proeza fallback
-          // The ref points to the video itself; clients read seccion_destino='leonidas'
-          refId = videoId
+          const [row] = await db.insert(leonidas_referencias).values({
+            usuario_id: usuarioId,
+            nombre: titulo,
+            url_referencia: video.url ?? null,
+            thumbnail_url: video.thumbnail_url ?? null,
+            fuente: 'dionisio',
+          }).returning({ id: leonidas_referencias.id })
+          refId = row.id
           break
         }
         default:

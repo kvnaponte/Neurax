@@ -9,6 +9,7 @@ import {
   michelin_recetas,
   dionisio_videos,
   kubera_productos,
+  leonidas_referencias,
 } from '../../db/schema'
 
 const EMAIL = `integraciones-${Date.now()}@neurax-test.com`
@@ -143,9 +144,9 @@ describe('Integración 4 — Dionisio → Secciones', () => {
     expect(receta.nombre).toBe(titulo)
   })
 
-  it('pre-llenado funciona para los 8 destinos (7 crean registro, leonidas marca el video)', async () => {
-    const conRegistro = ['soberbio', 'michelin', 'odysseia', 'kubera', 'nemesis', 'prodigy', 'proeza'] as const
-    for (const seccion of conRegistro) {
+  it('pre-llenado crea un registro para los 8 destinos', async () => {
+    const destinos = ['soberbio', 'michelin', 'odysseia', 'kubera', 'nemesis', 'prodigy', 'proeza', 'leonidas'] as const
+    for (const seccion of destinos) {
       const videoRes = await post('/api/dionisio/videos', {
         url: `https://youtube.com/watch?v=${seccion}`, titulo: `Video ${seccion}`,
       })
@@ -158,16 +159,23 @@ describe('Integración 4 — Dionisio → Secciones', () => {
       expect(actualizado.estado).toBe('accionado')
       expect(actualizado.seccion_ref_id).not.toBeNull() // se creó un registro destino
     }
+  })
 
-    // 8º destino: leonidas (sin tabla destino → marca el video, ref nula)
-    const videoRes = await post('/api/dionisio/videos', {
-      url: 'https://youtube.com/watch?v=leonidas', titulo: 'Video leonidas',
-    })
+  it("destino leonidas → crea leonidas_referencia con url y nombre del video", async () => {
+    const url = 'https://youtube.com/watch?v=press-banca'
+    const titulo = 'Press de banca técnica'
+    const videoRes = await post('/api/dionisio/videos', { url, titulo })
     const video = videoRes.json()
-    const res = await post(`/api/dionisio/videos/${video.id}/accionar`, { seccion: 'leonidas' })
-    expect(res.statusCode).toBe(200)
-    const [actualizado] = await db.select().from(dionisio_videos).where(eq(dionisio_videos.id, video.id))
-    expect(actualizado.seccion_destino).toBe('leonidas')
+
+    const accionarRes = await post(`/api/dionisio/videos/${video.id}/accionar`, { seccion: 'leonidas' })
+    expect(accionarRes.statusCode).toBe(200)
+    const { seccion_ref_id } = accionarRes.json()
+
+    const [referencia] = await db.select().from(leonidas_referencias)
+      .where(eq(leonidas_referencias.id, seccion_ref_id))
+    expect(referencia.nombre).toBe(titulo)
+    expect(referencia.url_referencia).toBe(url)
+    expect(referencia.fuente).toBe('dionisio')
   })
 })
 
