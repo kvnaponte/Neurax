@@ -1,7 +1,12 @@
 import { Redirect } from 'expo-router'
+import { MMKV } from 'react-native-mmkv'
 
-// Entry point — redirige según sesión activa
-// TODO: verificar token en SecureStore y redirigir a (auth)/login o (tabs)/home
+const storage = new MMKV()
+
 export default function Index() {
+  const onboardingDone = storage.getString('onboarding_completed')
+  if (!onboardingDone) {
+    return <Redirect href="/(auth)/onboarding" />
+  }
   return <Redirect href="/(auth)/login" />
 }
