@@ -101,6 +101,8 @@ describe('Idempotencia de verificarLogros', () => {
 // Insertar actividad con racha=0 garantiza bonus_racha=1.0 → XP exacto del catálogo
 describe('Desbloqueo de logros por criterio', () => {
   it('primera actividad desbloquea first_step con 25 XP exactos (racha=0, bonus=1.0)', async () => {
+    // timestamp fijo a mediodía UTC: evita disparar early_bird (<7AM) o night_owl (>=11PM),
+    // garantizando que solo first_step se desbloquee con esta primera actividad
     await db.insert(actividades).values({
       usuario_id: userId,
       tipo: 'estudio',
@@ -108,6 +110,7 @@ describe('Desbloqueo de logros por criterio', () => {
       duracion_minutos: 30,
       xp_base: 30,
       xp_generado: 30,
+      timestamp: new Date('2026-06-15T12:00:00Z'),
     })
 
     const [before] = await db.select({ xp_total: usuarios.xp_total }).from(usuarios).where(eq(usuarios.id, userId))

@@ -13,6 +13,10 @@ import cronosRoutes, { cronosExternalPlugin } from './modules/cronos/cronos.rout
 import odinRoutes from './modules/odin/odin.routes.js'
 import leonidasRoutes from './modules/leonidas/leonidas.routes.js'
 import demeterRoutes from './modules/demeter/demeter.routes.js'
+import prodigyRoutes from './modules/prodigy/prodigy.routes.js'
+import proezaRoutes from './modules/proeza/proeza.routes.js'
+import dionisioRoutes from './modules/dionisio/dionisio.routes.js'
+import kuberaRoutes from './modules/kubera/kubera.routes.js'
 import notificationsRoutes from './modules/notifications/notifications.routes.js'
 import socketioPlugin from './shared/plugins/socketio.plugin.js'
 import {
@@ -47,6 +51,10 @@ await app.register(cronosExternalPlugin, { prefix: '/api/external/cronos' })
 await app.register(odinRoutes, { prefix: '/api/odin' })
 await app.register(leonidasRoutes, { prefix: '/api/leonidas' })
 await app.register(demeterRoutes, { prefix: '/api/demeter' })
+await app.register(prodigyRoutes, { prefix: '/api/prodigy' })
+await app.register(proezaRoutes, { prefix: '/api/proeza' })
+await app.register(dionisioRoutes, { prefix: '/api/dionisio' })
+await app.register(kuberaRoutes, { prefix: '/api/kubera' })
 await app.register(notificationsRoutes, { prefix: '/api/notifications' })
 
 app.get('/health', async (_, reply) => {

@@ -11,6 +11,10 @@ import cronosRoutes, { cronosExternalPlugin } from '../modules/cronos/cronos.rou
 import odinRoutes from '../modules/odin/odin.routes'
 import leonidasRoutes from '../modules/leonidas/leonidas.routes'
 import demeterRoutes from '../modules/demeter/demeter.routes'
+import prodigyRoutes from '../modules/prodigy/prodigy.routes'
+import proezaRoutes from '../modules/proeza/proeza.routes'
+import dionisioRoutes from '../modules/dionisio/dionisio.routes'
+import kuberaRoutes from '../modules/kubera/kubera.routes'
 
 // No importa workers para no abrir conexiones BullMQ en tests
 
@@ -31,6 +35,10 @@ export async function buildApp() {
   await app.register(odinRoutes, { prefix: '/api/odin' })
   await app.register(leonidasRoutes, { prefix: '/api/leonidas' })
   await app.register(demeterRoutes, { prefix: '/api/demeter' })
+  await app.register(prodigyRoutes, { prefix: '/api/prodigy' })
+  await app.register(proezaRoutes, { prefix: '/api/proeza' })
+  await app.register(dionisioRoutes, { prefix: '/api/dionisio' })
+  await app.register(kuberaRoutes, { prefix: '/api/kubera' })
 
   return app
 }

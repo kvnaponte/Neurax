@@ -129,9 +129,15 @@ export function makeLogrosService(db: DB, rachaService: RachaService, otorgarXP:
           .where(eq(usuario_achievements.id, logro.id))
 
         if (progreso >= logro.total) {
-          await db.update(usuario_achievements)
+          // UPDATE guardado: solo desbloquea si aún está bloqueado. Evita doble
+          // otorgamiento cuando la recursión re-entrante (otorgarXP → verificarLogros)
+          // ya desbloqueó este logro mientras iterábamos la lista obsoleta.
+          const desbloqueados = await db.update(usuario_achievements)
             .set({ desbloqueado: true, desbloqueado_at: new Date(), xp_otorgado: catalogEntry.xp })
-            .where(eq(usuario_achievements.id, logro.id))
+            .where(and(eq(usuario_achievements.id, logro.id), eq(usuario_achievements.desbloqueado, false)))
+            .returning({ id: usuario_achievements.id })
+
+          if (desbloqueados.length === 0) continue
 
           await otorgarXP({ usuarioId, xpBase: catalogEntry.xp, bonusHorario: 1, fuente: 'achievement', fuenteId: logro.id, _depth })
 

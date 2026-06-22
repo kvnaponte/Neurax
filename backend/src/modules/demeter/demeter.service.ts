@@ -8,6 +8,7 @@ import {
   soberbio_lugares,
 } from '../../db/schema'
 import { makeXpService } from '../gamification/xp.service'
+import { makeCronosService } from '../cronos/cronos.service'
 import { notificationsQueue } from '../../jobs/queues'
 import { crearNotificacion } from '../notifications/notifications.service'
 import { getIo } from '../../shared/io'
@@ -227,6 +228,24 @@ export function makeDemeterService(db: DB) {
       mensaje: `¡Ya tienes presupuesto para visitar ${lugar.nombre}!`,
       data: { lugar_id: lugar.id, subtipo: 'soberbio' },
     })
+
+    // Cronos: agendar visita en 7 días
+    const cronosService = makeCronosService(db)
+    const visitaInicio = new Date()
+    visitaInicio.setUTCDate(visitaInicio.getUTCDate() + 7)
+    visitaInicio.setUTCHours(10, 0, 0, 0)
+    const visitaFin = new Date(visitaInicio.getTime() + 2 * 60 * 60_000)
+    try {
+      await cronosService.crearEvento(usuarioId, {
+        titulo: `[Soberbio] Visitar: ${lugar.nombre}`,
+        tipo: 'soberbio',
+        inicio_at: visitaInicio,
+        fin_at: visitaFin,
+        prioridad: 2,
+        seccion_origen: 'demeter',
+        seccion_ref_id: lugar.id,
+      })
+    } catch { /* slot ocupado, no bloquear el flujo */ }
 
     fondo.soberbio_notificado = true
     await db
