@@ -1,5 +1,10 @@
 packages:
   - backend
-  - mobile
+  - apps/mobile
   - web
   - shared
+allowBuilds:
+  argon2: true
+  esbuild: true
+  msgpackr-extract: true
+nodeLinker: hoisted
