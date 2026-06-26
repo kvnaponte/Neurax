@@ -3,7 +3,10 @@ import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { GlobalOverlays } from '@/providers/GlobalOverlays'
+
+const queryClient = new QueryClient()
 
 // Mantener el splash visible hasta que las fuentes Cinzel estén cargadas
 SplashScreen.preventAutoHideAsync()
@@ -31,13 +34,13 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null
 
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <StatusBar style="light" backgroundColor="#07061a" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#07061a' } }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
       </Stack>
       <GlobalOverlays />
-    </>
+    </QueryClientProvider>
   )
 }

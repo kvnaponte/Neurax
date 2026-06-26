@@ -28,7 +28,38 @@ async function request<T>(
   return data as T
 }
 
+export interface GamificationStatus {
+  xp_total: number
+  xp_nivel_actual: number
+  xp_siguiente_nivel: number
+  nivel: number
+  nombre_nivel: string
+  racha_actual: number
+  mejor_racha: number
+  bonus_xp: number
+  xp_hoy: number
+}
+
+export interface ActividadHoy {
+  id: string
+  tipo: string
+  area: 'rutinarias' | 'fisicas' | 'economicas' | 'otras'
+  hora: string
+  duracion: number
+  xp: number
+}
+
 export const api = {
+  gamification: {
+    status: (token: string) =>
+      request<GamificationStatus>('/gamification/status', { token }),
+  },
+
+  actividades: {
+    today: (token: string) =>
+      request<ActividadHoy[]>('/actividades/today', { token }),
+  },
+
   auth: {
     register: (body: { nombre: string; email: string; password: string }) =>
       request<{ access_token: string; refresh_token: string; user: { id: string; nombre: string; email: string } }>(
