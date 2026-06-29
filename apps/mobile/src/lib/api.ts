@@ -49,6 +49,39 @@ export interface ActividadHoy {
   xp: number
 }
 
+export interface ActividadDetalle extends ActividadHoy {
+  fecha: string
+  nombre?: string
+  metadata?: Record<string, unknown>
+}
+
+export interface RegistrarActividadPayload {
+  tipo: string
+  area: 'rutinarias' | 'fisicas' | 'economicas' | 'otras'
+  duracion: number
+  hora?: string
+  metadata?: Record<string, unknown>
+}
+
+export interface CronosEvento {
+  id: string
+  titulo: string
+  tipo?: string
+  area?: 'rutinarias' | 'fisicas' | 'economicas' | 'otras'
+  inicio_at: string
+  fin_at: string
+  completado: boolean
+  xp?: number
+  prioridad?: string
+}
+
+export interface MoverEventoPayload {
+  inicio_at: string
+  fin_at: string
+  resolucion?: 'reemplazar' | 'deslizar' | 'intercambiar'
+  conflicto_id?: string
+}
+
 export const api = {
   gamification: {
     status: (token: string) =>
@@ -58,6 +91,27 @@ export const api = {
   actividades: {
     today: (token: string) =>
       request<ActividadHoy[]>('/actividades/today', { token }),
+    list: (token: string, area?: string) =>
+      request<ActividadDetalle[]>(`/actividades${area ? `?area=${area}` : ''}`, { token }),
+    registrar: (token: string, payload: RegistrarActividadPayload) =>
+      request<{ actividad: ActividadDetalle; xp_ganado: number }>(
+        '/actividades',
+        { method: 'POST', body: JSON.stringify(payload), token },
+      ),
+  },
+
+  cronos: {
+    getEvents: (token: string, date: string) =>
+      request<CronosEvento[]>(`/cronos/events?date=${date}`, { token }),
+    createEvent: (token: string, payload: { titulo: string; tipo?: string; area?: string; inicio_at: string; fin_at: string }) =>
+      request<CronosEvento>('/cronos/events', { method: 'POST', body: JSON.stringify(payload), token }),
+    completeEvent: (token: string, id: string) =>
+      request<{ evento: CronosEvento; xp_ganado?: number; penalizacion?: number }>(
+        `/cronos/events/${id}/complete`,
+        { method: 'PUT', token },
+      ),
+    moveEvent: (token: string, id: string, payload: MoverEventoPayload) =>
+      request<CronosEvento[]>(`/cronos/events/${id}/move`, { method: 'PUT', body: JSON.stringify(payload), token }),
   },
 
   auth: {
