@@ -49,37 +49,88 @@ export interface ActividadHoy {
   xp: number
 }
 
-export interface ActividadDetalle extends ActividadHoy {
-  fecha: string
-  nombre?: string
-  metadata?: Record<string, unknown>
+// Raw activity row as returned by the backend (actividades table)
+export interface ActividadRow {
+  id: string
+  tipo: string
+  area: 'rutinarias' | 'fisicas' | 'mentales' | 'economicas'
+  duracion_minutos: number
+  timestamp: string
+  xp_base: number
+  xp_generado: number
+  limite_excedido: boolean
+  descripcion?: string | null
+  metadata?: Record<string, unknown> | null
 }
 
+export interface ActividadesListResponse {
+  data: ActividadRow[]
+  total: number
+  page: number
+  limit: number
+}
+
+// Mirrors backend RegistrarSchema (POST /actividades)
 export interface RegistrarActividadPayload {
   tipo: string
-  area: 'rutinarias' | 'fisicas' | 'economicas' | 'otras'
-  duracion: number
-  hora?: string
+  duracion_minutos: number
+  timestamp?: string
+  descripcion?: string
   metadata?: Record<string, unknown>
 }
 
+export interface RegistrarActividadResponse {
+  actividad: ActividadRow
+  xp_otorgado: number
+  nivel_nuevo?: number
+  racha_actual: number
+  limite_excedido: boolean
+}
+
+// Raw cronos event row (cronos_eventos table)
 export interface CronosEvento {
   id: string
   titulo: string
-  tipo?: string
-  area?: 'rutinarias' | 'fisicas' | 'economicas' | 'otras'
+  tipo: string
+  area?: 'rutinarias' | 'fisicas' | 'mentales' | 'economicas' | null
   inicio_at: string
   fin_at: string
+  duracion_minutos?: number
+  prioridad?: number
+  energia_consumida?: string | null
   completado: boolean
-  xp?: number
-  prioridad?: string
+  completado_at?: string | null
+  seccion_origen?: string | null
+  seccion_ref_id?: string | null
+  metadata?: Record<string, unknown> | null
 }
 
-export interface MoverEventoPayload {
+export interface CrearEventoPayload {
+  titulo: string
+  tipo: string
+  area?: string
   inicio_at: string
   fin_at: string
-  resolucion?: 'reemplazar' | 'deslizar' | 'intercambiar'
-  conflicto_id?: string
+  prioridad?: number
+}
+
+// Mirrors backend MoverEventoSchema (POST /cronos/events/:id/move)
+export type MoverOpcion = 'reemplazar' | 'deslizar' | 'intercambiar'
+export interface MoverEventoPayload {
+  nuevo_inicio: string
+  opcion: MoverOpcion
+}
+
+export interface CompletarEventoResponse {
+  completado: boolean
+  impuntual: boolean
+  xp_delta: number
+  action?: string
+}
+
+export interface EnergiaPunto {
+  evento_id: string
+  energia_acumulada_despues: number
 }
 
 export const api = {
@@ -91,27 +142,38 @@ export const api = {
   actividades: {
     today: (token: string) =>
       request<ActividadHoy[]>('/actividades/today', { token }),
-    list: (token: string, area?: string) =>
-      request<ActividadDetalle[]>(`/actividades${area ? `?area=${area}` : ''}`, { token }),
+    list: (token: string, opts: { area?: string; page?: number; limit?: number } = {}) => {
+      const qs = new URLSearchParams()
+      if (opts.area) qs.set('area', opts.area)
+      if (opts.page) qs.set('page', String(opts.page))
+      if (opts.limit) qs.set('limit', String(opts.limit))
+      const suffix = qs.toString() ? `?${qs.toString()}` : ''
+      return request<ActividadesListResponse>(`/actividades${suffix}`, { token })
+    },
     registrar: (token: string, payload: RegistrarActividadPayload) =>
-      request<{ actividad: ActividadDetalle; xp_ganado: number }>(
+      request<RegistrarActividadResponse>(
         '/actividades',
         { method: 'POST', body: JSON.stringify(payload), token },
       ),
   },
 
   cronos: {
-    getEvents: (token: string, date: string) =>
-      request<CronosEvento[]>(`/cronos/events?date=${date}`, { token }),
-    createEvent: (token: string, payload: { titulo: string; tipo?: string; area?: string; inicio_at: string; fin_at: string }) =>
+    getEvents: (token: string, fecha: string) =>
+      request<CronosEvento[]>(`/cronos/events?fecha=${fecha}`, { token }),
+    createEvent: (token: string, payload: CrearEventoPayload) =>
       request<CronosEvento>('/cronos/events', { method: 'POST', body: JSON.stringify(payload), token }),
     completeEvent: (token: string, id: string) =>
-      request<{ evento: CronosEvento; xp_ganado?: number; penalizacion?: number }>(
+      request<CompletarEventoResponse>(
         `/cronos/events/${id}/complete`,
-        { method: 'PUT', token },
+        { method: 'POST', token },
       ),
     moveEvent: (token: string, id: string, payload: MoverEventoPayload) =>
-      request<CronosEvento[]>(`/cronos/events/${id}/move`, { method: 'PUT', body: JSON.stringify(payload), token }),
+      request<{ success: boolean }>(
+        `/cronos/events/${id}/move`,
+        { method: 'POST', body: JSON.stringify(payload), token },
+      ),
+    energy: (token: string, fecha: string) =>
+      request<EnergiaPunto[]>(`/cronos/energy/${fecha}`, { token }),
   },
 
   auth: {

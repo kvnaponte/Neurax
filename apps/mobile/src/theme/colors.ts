@@ -19,6 +19,7 @@ export const colors = {
   areas: {
     rutinarias: '#818cf8',
     fisicas: '#fb923c',
+    mentales: '#a855f7',
     economicas: '#60a5fa',
     otras: '#34d399',
   },
