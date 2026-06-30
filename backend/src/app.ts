@@ -3,6 +3,7 @@ import cors from '@fastify/cors'
 import cookie from '@fastify/cookie'
 import jwt from '@fastify/jwt'
 import rateLimit from '@fastify/rate-limit'
+import multipart from '@fastify/multipart'
 import { client } from './db/index.js'
 import dbPlugin from './shared/plugins/db.plugin.js'
 import redisPlugin from './shared/plugins/redis.plugin.js'
@@ -18,6 +19,8 @@ import proezaRoutes from './modules/proeza/proeza.routes.js'
 import dionisioRoutes from './modules/dionisio/dionisio.routes.js'
 import kuberaRoutes from './modules/kubera/kubera.routes.js'
 import notificationsRoutes from './modules/notifications/notifications.routes.js'
+import perfilRoutes from './modules/perfil/perfil.routes.js'
+import logrosRoutes from './modules/logros/logros.routes.js'
 import socketioPlugin from './shared/plugins/socketio.plugin.js'
 import {
   notificationsWorker,
@@ -42,6 +45,7 @@ await app.register(cookie)
 await app.register(jwt, { secret: process.env.JWT_SECRET! })
 await app.register(rateLimit, { global: false, redis: app.redis })
 await app.register(cors)
+await app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } })
 await app.register(socketioPlugin)
 await app.register(authRoutes, { prefix: '/api/auth' })
 await app.register(gamificationRoutes, { prefix: '/api/gamification' })
@@ -56,6 +60,8 @@ await app.register(proezaRoutes, { prefix: '/api/proeza' })
 await app.register(dionisioRoutes, { prefix: '/api/dionisio' })
 await app.register(kuberaRoutes, { prefix: '/api/kubera' })
 await app.register(notificationsRoutes, { prefix: '/api/notifications' })
+await app.register(perfilRoutes, { prefix: '/api/perfil' })
+await app.register(logrosRoutes, { prefix: '/api/logros' })
 
 app.get('/health', async (_, reply) => {
   try {

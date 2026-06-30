@@ -11,6 +11,7 @@ export const usuarios = pgTable('usuarios', {
   recovery_answer_2_hash: text('recovery_answer_2_hash'),
   xp_total: integer('xp_total').default(0).notNull(),
   nivel: integer('nivel').default(1).notNull(),
+  avatar_url: text('avatar_url'),
   active: boolean('active').default(true).notNull(),
   last_login_at: timestamp('last_login_at', { withTimezone: true }),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

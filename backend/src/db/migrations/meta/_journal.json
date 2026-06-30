@@ -50,6 +50,13 @@
       "when": 1782093635189,
       "tag": "0006_blushing_deadpool",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782816496890,
+      "tag": "0007_clammy_puppet_master",
+      "breakpoints": true
     }
   ]
 }

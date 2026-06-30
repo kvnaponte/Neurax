@@ -1,7 +1,8 @@
 import * as SecureStore from 'expo-secure-store'
 
 // For dev: 10.0.2.2 = Android emulator localhost, change to device IP for physical device
-const BASE_URL = 'http://10.0.2.2:3000/api'
+// El backend (apps raíz `backend/`) escucha en el puerto 3001.
+const BASE_URL = 'http://10.0.2.2:3001/api'
 
 async function request<T>(
   path: string,
