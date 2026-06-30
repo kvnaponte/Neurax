@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
+  Image,
   StyleSheet,
   Pressable,
   Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import * as ImagePicker from 'expo-image-picker'
 import { User, LogOut, Edit2, Camera } from 'lucide-react-native'
 
 import { colors, spacing } from '@/theme'
@@ -129,21 +131,23 @@ const NIVEL_COLORES: Record<number, string> = {
 }
 
 export default function PerfilScreen() {
-  const { user, logout } = useAuthStore()
+  const { user, accessToken, logout } = useAuthStore()
   const gamification = useGamificationStore()
   const queryClient = useQueryClient()
   const [editVisible, setEditVisible] = useState(false)
+  const [avatarUri, setAvatarUri] = useState<string | null>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   const { data: perfil } = useQuery({
     queryKey: ['perfil'],
-    queryFn: () => api.perfil.get(gamification.xp_total.toString()),
-    enabled: false, // loads when token available via authStore
+    queryFn: () => api.perfil.get(accessToken!),
+    enabled: !!accessToken,
     staleTime: 60_000,
   })
 
   const updateMutation = useMutation({
     mutationFn: (nombre: string) =>
-      api.perfil.update('', { nombre }),
+      api.perfil.update(accessToken!, { nombre }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['perfil'] })
       setEditVisible(false)
@@ -152,12 +156,40 @@ export default function PerfilScreen() {
 
   const nivelColor = NIVEL_COLORES[Math.min(6, gamification.nivel)] ?? colors.gold[200]
   const xpSemana = perfil?.xp_por_semana ?? [0, 0, 0, 0, 0, 0, 0]
+  const displayAvatar = avatarUri ?? perfil?.avatar_url ?? null
 
-  function handleAvatarPress() {
-    Alert.alert(
-      'Cambiar avatar',
-      'Para cambiar tu foto de perfil instala expo-image-picker.\nnpm install expo-image-picker',
-    )
+  async function handleAvatarPress() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para cambiar el avatar.')
+      return
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    })
+    if (result.canceled) return
+
+    const asset = result.assets[0]
+    setAvatarUri(asset.uri)
+    setUploadingAvatar(true)
+    try {
+      const formData = new FormData()
+      formData.append('avatar', {
+        uri: asset.uri,
+        name: 'avatar.jpg',
+        type: asset.mimeType ?? 'image/jpeg',
+      } as any)
+      await api.perfil.uploadAvatar(accessToken!, formData)
+      queryClient.invalidateQueries({ queryKey: ['perfil'] })
+    } catch (err: any) {
+      Alert.alert('Error', err?.message ?? 'No se pudo subir el avatar')
+      setAvatarUri(null)
+    } finally {
+      setUploadingAvatar(false)
+    }
   }
 
   function handleLogout() {
@@ -177,10 +209,14 @@ export default function PerfilScreen() {
 
         {/* Avatar + name */}
         <View style={styles.avatarSection}>
-          <TouchableOpacity onPress={handleAvatarPress} activeOpacity={0.8}>
+          <TouchableOpacity onPress={handleAvatarPress} activeOpacity={0.8} disabled={uploadingAvatar}>
             <View style={[styles.avatar, { borderColor: nivelColor }]}>
-              <User size={40} color={nivelColor} />
-              <View style={styles.cameraOverlay}>
+              {displayAvatar ? (
+                <Image source={{ uri: displayAvatar }} style={styles.avatarImage} />
+              ) : (
+                <User size={40} color={nivelColor} />
+              )}
+              <View style={[styles.cameraOverlay, uploadingAvatar && { opacity: 0.5 }]}>
                 <Camera size={14} color="#fff" />
               </View>
             </View>
@@ -283,6 +319,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg[600],
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarImage: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
   },
   cameraOverlay: {
     position: 'absolute',
