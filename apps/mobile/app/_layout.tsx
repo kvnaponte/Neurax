@@ -41,6 +41,18 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="odin-calendar" />
         <Stack.Screen name="leonidas" />
+        <Stack.Screen name="notificaciones" />
+        <Stack.Screen name="demeter" />
+        <Stack.Screen name="dionisio" />
+        <Stack.Screen name="soberbio" />
+        <Stack.Screen name="apolo" />
+        <Stack.Screen name="alejandria" />
+        <Stack.Screen name="michelin" />
+        <Stack.Screen name="odysseia" />
+        <Stack.Screen name="nemesis" />
+        <Stack.Screen name="kubera" />
+        <Stack.Screen name="proeza" />
+        <Stack.Screen name="prodigy" />
       </Stack>
       <GlobalOverlays />
     </QueryClientProvider>

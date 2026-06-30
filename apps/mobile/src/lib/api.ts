@@ -214,6 +214,190 @@ export interface RegistrarSesionResponse {
   xp_otorgado: number
 }
 
+// ─── Demeter types ───────────────────────────────────────────────────────────
+
+export type FondoKey = 'soberbio' | 'michelin' | 'odysseia' | 'nemesis' | 'kubera'
+export interface PresupuestoConfig {
+  ingreso_mensual: number
+  fondos: Record<FondoKey, number>
+  configurado: boolean
+}
+export interface Movimiento {
+  id: string
+  tipo: 'ingreso' | 'egreso'
+  monto: number
+  descripcion: string
+  fondo: FondoKey | null
+  created_at: string
+}
+export interface DemeterBalance {
+  total: number
+  fondos: Record<FondoKey, { balance: number; porcentaje: number }>
+}
+
+// ─── Dionisio types ───────────────────────────────────────────────────────────
+
+export interface VideoProcessado {
+  id: string
+  url: string
+  titulo: string
+  categoria: string
+  duracion_segundos: number
+  transcripcion: string
+  xp_otorgado: number
+  processed_at: string
+}
+export type PipelineStep = 'descargando' | 'extrayendo' | 'transcribiendo' | 'clasificando' | 'completado' | 'error'
+
+// ─── Soberbio types ───────────────────────────────────────────────────────────
+
+export interface CalificacionSoberbio {
+  ambiente: number
+  atencion: number
+  comida: number
+  precio: number
+  ubicacion: number
+  nota?: string
+}
+export interface Experiencia {
+  id: string
+  nombre: string
+  tipo: string
+  ciudad: string
+  precio_promedio: number | null
+  descripcion: string | null
+  url_maps: string | null
+  estado: 'planificado' | 'visitado'
+  calificacion?: CalificacionSoberbio
+}
+
+// ─── Apolo types ──────────────────────────────────────────────────────────────
+
+export type EstadoPelicula = 'visto' | 'pendiente' | 'descartado'
+export interface Pelicula {
+  id: string
+  titulo: string
+  anio: number | null
+  director: string | null
+  pais: string | null
+  genero: string | null
+  estado: EstadoPelicula
+  calificacion: number | null
+  categoria: number | null
+  created_at: string
+}
+
+// ─── Content section types ────────────────────────────────────────────────────
+
+export interface LibroAlejandria {
+  id: string
+  titulo: string
+  autor: string
+  anio: number | null
+  paginas: number | null
+  genero: string | null
+  estado: 'leyendo' | 'completado' | 'pendiente'
+  pagina_actual?: number
+  fecha_completado?: string | null
+  notas?: string | null
+}
+export interface ItemMichelin {
+  id: string
+  nombre: string
+  tipo: string
+  ciudad: string
+  chef: string | null
+  visitado?: boolean
+  notas: string | null
+}
+export interface ItemOdysseia {
+  id: string
+  destino: string
+  pais: string
+  tipo: string
+  estado: string
+  notas: string | null
+}
+export interface ItemNemesis {
+  id: string
+  titulo: string
+  descripcion: string | null
+  categoria: string
+  dificultad: string
+  fecha_limite: string | null
+  completado?: boolean
+}
+export interface ItemKubera {
+  id: string
+  titulo: string
+  categoria: string
+  monto_objetivo: number
+  monto_actual?: number
+  fecha_objetivo?: string | null
+  notas?: string | null
+}
+export interface ItemProeza {
+  id: string
+  titulo: string
+  categoria: string
+  valor: number | null
+  unidad: string | null
+  descripcion: string | null
+  fecha: string | null
+}
+export interface ItemProdigy {
+  id: string
+  nombre: string
+  categoria: string
+  nivel: string
+  descripcion: string | null
+}
+
+// ─── Logros types ─────────────────────────────────────────────────────────────
+
+export interface Logro {
+  id: string
+  nombre: string
+  descripcion: string
+  xp_otorgado: number
+  desbloqueado: boolean
+  progreso_actual?: number
+  progreso_objetivo?: number
+  fecha_desbloqueado?: string | null
+  categoria: string
+}
+
+// ─── Notificaciones types ─────────────────────────────────────────────────────
+
+export type NotifTipo = 'racha' | 'mision' | 'cronos' | 'ia' | 'logro' | 'sistema'
+export interface Notificacion {
+  id: string
+  tipo: NotifTipo
+  titulo: string
+  cuerpo: string
+  leida: boolean
+  created_at: string
+}
+export interface NotifConfig {
+  rachas: boolean
+  misiones: boolean
+  cronos: boolean
+  ia: boolean
+}
+
+// ─── Perfil types ─────────────────────────────────────────────────────────────
+
+export interface PerfilData {
+  id: string
+  nombre: string
+  email: string
+  avatar_url: string | null
+  xp_por_semana: number[]
+  logros_total: number
+  logros_desbloqueados: number
+  actividades_semana: number
+}
+
 export const api = {
   gamification: {
     status: (token: string) =>
@@ -279,6 +463,130 @@ export const api = {
         '/leonidas/sesiones',
         { method: 'POST', body: JSON.stringify(payload), token },
       ),
+  },
+
+  demeter: {
+    budget: (token: string) =>
+      request<PresupuestoConfig>('/demeter/budget', { token }),
+    setBudget: (token: string, payload: { ingreso_mensual: number; fondos: Record<FondoKey, number> }) =>
+      request<PresupuestoConfig>('/demeter/budget', { method: 'POST', body: JSON.stringify(payload), token }),
+    balance: (token: string) =>
+      request<DemeterBalance>('/demeter/balance', { token }),
+    movimientos: (token: string, opts: { tipo?: string; fondo?: string; page?: number } = {}) => {
+      const qs = new URLSearchParams()
+      if (opts.tipo) qs.set('tipo', opts.tipo)
+      if (opts.fondo) qs.set('fondo', opts.fondo)
+      if (opts.page) qs.set('page', String(opts.page))
+      const suffix = qs.toString() ? `?${qs.toString()}` : ''
+      return request<{ data: Movimiento[]; total: number }>(`/demeter/movimientos${suffix}`, { token })
+    },
+    addMovimiento: (token: string, payload: { tipo: 'ingreso' | 'egreso'; monto: number; descripcion: string; fondo?: FondoKey }) =>
+      request<Movimiento>('/demeter/movimientos', { method: 'POST', body: JSON.stringify(payload), token }),
+  },
+
+  dionisio: {
+    process: (token: string, url: string) =>
+      request<{ job_id: string }>('/dionisio/process', { method: 'POST', body: JSON.stringify({ url }), token }),
+    status: (token: string, job_id: string) =>
+      request<{ step: PipelineStep; video?: VideoProcessado }>(`/dionisio/status/${job_id}`, { token }),
+    videos: (token: string) =>
+      request<VideoProcessado[]>('/dionisio/videos', { token }),
+  },
+
+  soberbio: {
+    list: (token: string) =>
+      request<Experiencia[]>('/soberbio/experiencias', { token }),
+    add: (token: string, payload: Omit<Experiencia, 'id' | 'estado' | 'calificacion'>) =>
+      request<Experiencia>('/soberbio/experiencias', { method: 'POST', body: JSON.stringify(payload), token }),
+    calificar: (token: string, id: string, payload: CalificacionSoberbio) =>
+      request<Experiencia>(`/soberbio/experiencias/${id}/calificar`, { method: 'POST', body: JSON.stringify(payload), token }),
+  },
+
+  apolo: {
+    list: (token: string, estado?: EstadoPelicula) => {
+      const qs = estado ? `?estado=${estado}` : ''
+      return request<Pelicula[]>(`/apolo/peliculas${qs}`, { token })
+    },
+    add: (token: string, payload: Omit<Pelicula, 'id' | 'categoria' | 'created_at'>) =>
+      request<Pelicula>('/apolo/peliculas', { method: 'POST', body: JSON.stringify(payload), token }),
+    get: (token: string, id: string) =>
+      request<Pelicula>(`/apolo/peliculas/${id}`, { token }),
+    update: (token: string, id: string, payload: Partial<Omit<Pelicula, 'id' | 'created_at'>>) =>
+      request<Pelicula>(`/apolo/peliculas/${id}`, { method: 'PUT', body: JSON.stringify(payload), token }),
+    delete: (token: string, id: string) =>
+      request<{ success: boolean }>(`/apolo/peliculas/${id}`, { method: 'DELETE', token }),
+  },
+
+  alejandria: {
+    list: (token: string, estado?: string) => {
+      const qs = estado ? `?estado=${estado}` : ''
+      return request<LibroAlejandria[]>(`/alejandria/libros${qs}`, { token })
+    },
+    add: (token: string, payload: Omit<LibroAlejandria, 'id'>) =>
+      request<LibroAlejandria>('/alejandria/libros', { method: 'POST', body: JSON.stringify(payload), token }),
+  },
+
+  michelin: {
+    list: (token: string) => request<ItemMichelin[]>('/michelin/items', { token }),
+    add: (token: string, payload: Omit<ItemMichelin, 'id'>) =>
+      request<ItemMichelin>('/michelin/items', { method: 'POST', body: JSON.stringify(payload), token }),
+  },
+
+  odysseia: {
+    list: (token: string) => request<ItemOdysseia[]>('/odysseia/items', { token }),
+    add: (token: string, payload: Omit<ItemOdysseia, 'id'>) =>
+      request<ItemOdysseia>('/odysseia/items', { method: 'POST', body: JSON.stringify(payload), token }),
+  },
+
+  nemesis: {
+    list: (token: string) => request<ItemNemesis[]>('/nemesis/items', { token }),
+    add: (token: string, payload: Omit<ItemNemesis, 'id'>) =>
+      request<ItemNemesis>('/nemesis/items', { method: 'POST', body: JSON.stringify(payload), token }),
+  },
+
+  kubera: {
+    list: (token: string) => request<ItemKubera[]>('/kubera/items', { token }),
+    add: (token: string, payload: Omit<ItemKubera, 'id'>) =>
+      request<ItemKubera>('/kubera/items', { method: 'POST', body: JSON.stringify(payload), token }),
+  },
+
+  proeza: {
+    list: (token: string) => request<ItemProeza[]>('/proeza/items', { token }),
+    add: (token: string, payload: Omit<ItemProeza, 'id'>) =>
+      request<ItemProeza>('/proeza/items', { method: 'POST', body: JSON.stringify(payload), token }),
+  },
+
+  prodigy: {
+    list: (token: string) => request<ItemProdigy[]>('/prodigy/items', { token }),
+    add: (token: string, payload: Omit<ItemProdigy, 'id'>) =>
+      request<ItemProdigy>('/prodigy/items', { method: 'POST', body: JSON.stringify(payload), token }),
+  },
+
+  logros: {
+    list: (token: string) => request<Logro[]>('/logros', { token }),
+  },
+
+  notificaciones: {
+    list: (token: string) => request<Notificacion[]>('/notificaciones', { token }),
+    markRead: (token: string, id: string) =>
+      request<{ success: boolean }>(`/notificaciones/${id}/read`, { method: 'PATCH', token }),
+    delete: (token: string, id: string) =>
+      request<{ success: boolean }>(`/notificaciones/${id}`, { method: 'DELETE', token }),
+    getConfig: (token: string) => request<NotifConfig>('/notificaciones/config', { token }),
+    updateConfig: (token: string, config: Partial<NotifConfig>) =>
+      request<NotifConfig>('/notificaciones/config', { method: 'PUT', body: JSON.stringify(config), token }),
+  },
+
+  perfil: {
+    get: (token: string) => request<PerfilData>('/perfil', { token }),
+    update: (token: string, payload: { nombre?: string }) =>
+      request<PerfilData>('/perfil', { method: 'PUT', body: JSON.stringify(payload), token }),
+    uploadAvatar: (token: string, formData: FormData) =>
+      request<{ avatar_url: string }>('/perfil/avatar', {
+        method: 'POST',
+        body: formData as unknown as BodyInit,
+        headers: { Authorization: `Bearer ${token}`, 'x-client-type': 'mobile' } as Record<string, string>,
+      }),
   },
 
   auth: {
