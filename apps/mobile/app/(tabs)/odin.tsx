@@ -46,7 +46,8 @@ function formatTimer(secs: number): string {
 }
 
 function timerColor(secs: number): string {
-  if (secs < 1800) return colors.gold[200]
+  // <30min: rojo pulsante (Acceptance Criteria), <2h: naranja, normal: blanco
+  if (secs < 1800) return '#ef4444'
   if (secs < 7200) return '#f97316'
   return colors.text
 }

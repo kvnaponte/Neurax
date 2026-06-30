@@ -57,13 +57,17 @@ const DIAS_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function formatRestTime(dispo: DisponibilidadMuscular): string {
+function formatRestDuration(dispo: DisponibilidadMuscular): string {
   const restante = Math.max(0, dispo.horas_requeridas - dispo.horas_transcurridas)
   const h = Math.floor(restante)
   const m = Math.round((restante - h) * 60)
-  if (h === 0) return `${m}min restantes`
-  if (m === 0) return `${h}h restantes`
-  return `${h}h ${m}min restantes`
+  if (h === 0) return `${m}min`
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}min`
+}
+
+function formatRestTime(dispo: DisponibilidadMuscular): string {
+  return `${formatRestDuration(dispo)} restantes`
 }
 
 function getDispoForGrupo(
@@ -207,8 +211,8 @@ function RegistrarSesionSheet({ visible, onClose, disponibilidad, token, onSucce
     const dispo = getDispoForGrupo(grupo, disponibilidad)
     if (dispo && !dispo.disponible) {
       Alert.alert(
-        'Músculo en descanso',
-        `${grupo} necesita ${formatRestTime(dispo)} más de descanso`,
+        `${grupo} en descanso`,
+        `Necesita ${formatRestDuration(dispo)} más de descanso`,
       )
       return
     }
