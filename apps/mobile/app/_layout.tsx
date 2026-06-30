@@ -39,6 +39,8 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#07061a' } }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="odin-calendar" />
+        <Stack.Screen name="leonidas" />
       </Stack>
       <GlobalOverlays />
     </QueryClientProvider>

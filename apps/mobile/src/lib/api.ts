@@ -133,6 +133,87 @@ export interface EnergiaPunto {
   energia_acumulada_despues: number
 }
 
+// ─── Odin types ─────────────────────────────────────────────────────────────
+
+export interface MisionPrincipal {
+  id: string
+  nombre: string
+  descripcion: string
+  progreso_actual: number
+  objetivo: number
+  xp_reward: number
+}
+
+export interface MisionSecundaria {
+  id: string
+  nombre: string
+  xp_reward: number
+  completada: boolean
+}
+
+export interface OdinDayData {
+  mision_principal: MisionPrincipal | null
+  misiones_secundarias: MisionSecundaria[]
+  cofre_desbloqueado: boolean
+  cofre_xp: number
+}
+
+export interface CalendarioDia {
+  fecha: string
+  estado: 'completado' | 'parcial' | 'ninguna' | 'sin_datos'
+}
+
+// ─── Leonidas types ──────────────────────────────────────────────────────────
+
+export interface EjercicioPlan {
+  id: string
+  nombre: string
+  series_objetivo: number
+  reps_objetivo: number
+  sets_completados: number
+  peso_kg?: number
+}
+
+export interface DiaSemanal {
+  dia: string
+  fecha: string
+  estado: 'completado' | 'hoy' | 'pendiente' | 'especial'
+}
+
+export interface LeonidasToday {
+  grupo_asignado: string
+  grupos_disponibles: number
+  ejercicios: EjercicioPlan[]
+  grid_semanal: DiaSemanal[]
+}
+
+export interface DisponibilidadMuscular {
+  grupo: string
+  horas_requeridas: number
+  horas_transcurridas: number
+  disponible: boolean
+}
+
+export interface EjercicioRegistro {
+  nombre: string
+  series: number
+  reps: number
+  peso_kg?: number
+}
+
+export interface RegistrarSesionPayload {
+  tipo: 'fuerza' | 'cardio' | 'barras' | 'trote'
+  grupos_musculares: string[]
+  duracion_minutos: number
+  intensidad: number
+  ejercicios: EjercicioRegistro[]
+}
+
+export interface RegistrarSesionResponse {
+  session_id: string
+  xp_otorgado: number
+}
+
 export const api = {
   gamification: {
     status: (token: string) =>
@@ -174,6 +255,30 @@ export const api = {
       ),
     energy: (token: string, fecha: string) =>
       request<EnergiaPunto[]>(`/cronos/energy/${fecha}`, { token }),
+  },
+
+  odin: {
+    today: (token: string) =>
+      request<OdinDayData>('/odin/missions/today', { token }),
+    calendario: (token: string, anio: number, mes: number) =>
+      request<CalendarioDia[]>(`/odin/calendar?anio=${anio}&mes=${mes}`, { token }),
+    completarMision: (token: string, id: string) =>
+      request<{ xp_otorgado: number; cofre_desbloqueado: boolean }>(
+        `/odin/missions/${id}/complete`,
+        { method: 'POST', token },
+      ),
+  },
+
+  leonidas: {
+    today: (token: string) =>
+      request<LeonidasToday>('/leonidas/today', { token }),
+    disponibilidad: (token: string) =>
+      request<DisponibilidadMuscular[]>('/leonidas/disponibilidad', { token }),
+    registrarSesion: (token: string, payload: RegistrarSesionPayload) =>
+      request<RegistrarSesionResponse>(
+        '/leonidas/sesiones',
+        { method: 'POST', body: JSON.stringify(payload), token },
+      ),
   },
 
   auth: {
